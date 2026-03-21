@@ -45,6 +45,8 @@ Otros scripts:
 
 Guía paso a paso (Git, variables `VITE_*`, CLI opcional y checklist): **[`docs/DESPLIEGUE-NETLIFY.md`](./docs/DESPLIEGUE-NETLIFY.md)**. En la raíz del repo hay un **`netlify.toml`** con el build (`npm run build`) y la carpeta de publicación `dist/`.
 
+Comandos de **Git/GitHub** explicados para el equipo: **[`docs/comandos.md`](./docs/comandos.md)**.
+
 ---
 
 ## Estructura del proyecto
@@ -59,7 +61,8 @@ project/
 ├── tsconfig*.json
 ├── netlify.toml            # Build y redirects para Netlify
 ├── docs/
-│   └── DESPLIEGUE-NETLIFY.md
+│   ├── DESPLIEGUE-NETLIFY.md
+│   └── comandos.md           # Git / GitHub: comandos y qué hace cada uno
 ├── public/                 # Estáticos (p. ej. agt2logo.png en el header)
 ├── src/
 │   ├── main.tsx            # Punto de entrada React; ThemeProvider

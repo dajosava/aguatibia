@@ -29,10 +29,7 @@ export default function AdminLogin() {
             <Lock className="w-10 h-10 text-blue-600 dark:text-cyan-400" />
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-slate-100 mb-2">Acceso administración</h2>
-        <p className="text-sm text-center text-gray-600 dark:text-slate-400 mb-8">
-          Inicia sesión con la cuenta de staff creada en Supabase Auth.
-        </p>
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-slate-100 mb-8">Acceso administración</h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>

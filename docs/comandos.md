@@ -82,6 +82,26 @@ git push -u origin main
 | `git commit -m "descripción del cambio"` | Crear commit con lo preparado. |
 | `git push` | Subir commits a GitHub (si ya configuraste `-u origin main` antes). |
 
+### Cada actualización: subir cambios desde tu PC (copiar y pegar)
+
+En la carpeta del proyecto (Git Bash):
+
+```bash
+cd "/c/Web_Projects/Aguatibia_Surf_school/AGUATIBIA_PROJECT/AguaTibiaForms/project"
+
+git status
+git add .
+git commit -m "Describe el cambio en una frase"
+git push
+```
+
+1. **`git status`** — Ver qué archivos cambiaron (comprueba que `.env` no aparezca como archivo nuevo a subir).
+2. **`git add .`** — Incluye todos los cambios en el próximo commit (o usa `git add ruta/archivo` para ser selectivo).
+3. **`git commit -m "..."`** — Guarda la instantánea con un mensaje claro.
+4. **`git push`** — Envía los commits a GitHub (rama `main` si ya configuraste el seguimiento con `git push -u origin main` la primera vez).
+
+Si otra persona subió cambios antes, antes de push ejecuta **`git pull`** (o `git pull --rebase`) para integrar y evitar rechazos.
+
 ---
 
 ## Quitar archivos del seguimiento de Git (sin borrarlos del disco)

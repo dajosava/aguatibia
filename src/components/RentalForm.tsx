@@ -218,7 +218,7 @@ export default function RentalForm() {
 
             <div>
               <label className="form-label" htmlFor="rental-address">
-                Address (Guiones)
+                Address
               </label>
               <input
                 id="rental-address"

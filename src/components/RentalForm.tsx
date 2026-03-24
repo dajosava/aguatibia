@@ -8,7 +8,7 @@ import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInp
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
 import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
 import { fetchStoreProducts } from '../services/storeCatalogService';
-import { fetchSurfboardInventory } from '../services/surfboardInventoryService';
+import { fetchSurfboardInventoryForRental } from '../services/surfboardInventoryService';
 import type { StoreProductRow } from '../types/storeProduct';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 
@@ -100,7 +100,7 @@ export default function RentalForm() {
   useEffect(() => {
     let cancelled = false;
     setSurfboardsLoading(true);
-    fetchSurfboardInventory()
+    fetchSurfboardInventoryForRental()
       .then((rows) => {
         if (!cancelled) setSurfboards(rows);
       })
@@ -405,7 +405,7 @@ export default function RentalForm() {
                   />
                   <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
                     Busca por marca, número o abre la lista. Se muestra marca y número; el contrato guarda el número de
-                    tabla. Solo tablas dadas de alta en el inventario.
+                    tabla. Solo se listan tablas en estado Disponible en el inventario.
                   </p>
                 </>
               )}

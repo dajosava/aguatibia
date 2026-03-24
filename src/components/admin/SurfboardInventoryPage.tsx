@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import type { SurfboardInventoryRow } from '../../types/surfboardInventory';
+import type { SurfboardInventoryRow, SurfboardStatus } from '../../types/surfboardInventory';
+import { SURFBOARD_STATUS_VALUES } from '../../types/surfboardInventory';
 import {
   deleteSurfboard,
   fetchSurfboardInventory,
@@ -9,6 +10,21 @@ import {
 } from '../../services/surfboardInventoryService';
 import { formatSurfboardPublicLabel } from '../../utils/surfboardDisplay';
 
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case 'Disponible':
+      return 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200';
+    case 'Rentada':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200';
+    case 'En mantenimiento':
+      return 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200';
+    case 'Vendida':
+      return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200';
+  }
+}
+
 export default function SurfboardInventoryPage() {
   const [rows, setRows] = useState<SurfboardInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,11 +32,13 @@ export default function SurfboardInventoryPage() {
   const [newBrand, setNewBrand] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newStatus, setNewStatus] = useState<SurfboardStatus>('Disponible');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<SurfboardInventoryRow | null>(null);
   const [editBrand, setEditBrand] = useState('');
   const [editNumber, setEditNumber] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editStatus, setEditStatus] = useState<SurfboardStatus>('Disponible');
 
   const load = useCallback(async () => {
     setError(null);
@@ -58,10 +76,12 @@ export default function SurfboardInventoryPage() {
         brand,
         board_number: num,
         description: newDesc.trim() || null,
+        status: newStatus,
       });
       setNewBrand('');
       setNewNumber('');
       setNewDesc('');
+      setNewStatus('Disponible');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar');
@@ -75,6 +95,7 @@ export default function SurfboardInventoryPage() {
     setEditBrand(row.brand ?? '');
     setEditNumber(row.board_number);
     setEditDesc(row.description ?? '');
+    setEditStatus((row.status ?? 'Disponible') as SurfboardStatus);
   };
 
   const closeEdit = () => {
@@ -101,6 +122,7 @@ export default function SurfboardInventoryPage() {
         brand,
         board_number: num,
         description: editDesc.trim() || null,
+        status: editStatus,
       });
       closeEdit();
       await load();
@@ -142,8 +164,9 @@ export default function SurfboardInventoryPage() {
           Inventario de tablas
         </h1>
         <p className="text-gray-600 dark:text-slate-400 mb-8">
-          Marca y número son los que verá el cliente al elegir tabla en el formulario de renta. La descripción es solo
-          para uso interno del equipo.
+          Marca y número son los que verá el cliente al elegir tabla en el formulario de renta (solo tablas{' '}
+          <strong className="text-gray-800 dark:text-slate-200">Disponible</strong>). La descripción es solo para uso
+          interno del equipo.
         </p>
 
         <form
@@ -177,6 +200,23 @@ export default function SurfboardInventoryPage() {
                 placeholder="Ej: #12 o 12"
                 autoComplete="off"
               />
+            </div>
+            <div>
+              <label className="form-label" htmlFor="inv-status">
+                Estado
+              </label>
+              <select
+                id="inv-status"
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value as SurfboardStatus)}
+                className="form-input"
+              >
+                {SURFBOARD_STATUS_VALUES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="sm:col-span-2">
               <label className="form-label" htmlFor="inv-desc">
@@ -215,6 +255,7 @@ export default function SurfboardInventoryPage() {
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Marca</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nº tabla</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Estado</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">
                     Descripción (interno)
                   </th>
@@ -226,7 +267,7 @@ export default function SurfboardInventoryPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
                       No hay tablas registradas. Añade la primera arriba.
                     </td>
                   </tr>
@@ -237,6 +278,13 @@ export default function SurfboardInventoryPage() {
                         {(row.brand ?? '').trim() || '—'}
                       </td>
                       <td className="px-4 py-3 font-bold text-blue-600 dark:text-cyan-400">{row.board_number}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadgeClass(row.status ?? 'Disponible')}`}
+                        >
+                          {row.status ?? 'Disponible'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-slate-300 whitespace-pre-wrap text-xs">
                         {row.description || '—'}
                       </td>
@@ -302,6 +350,23 @@ export default function SurfboardInventoryPage() {
                   className="form-input"
                   required
                 />
+              </div>
+              <div className="mb-4">
+                <label className="form-label" htmlFor="edit-status">
+                  Estado
+                </label>
+                <select
+                  id="edit-status"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as SurfboardStatus)}
+                  className="form-input"
+                >
+                  {SURFBOARD_STATUS_VALUES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="mb-6">
                 <label className="form-label" htmlFor="edit-desc">

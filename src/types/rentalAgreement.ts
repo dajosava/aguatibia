@@ -1,6 +1,15 @@
 /** Estados de negocio del acuerdo en base de datos */
 export type RentalAgreementStatus = 'pending' | 'active' | 'completed' | 'cancelled';
 
+/** Cambio de tabla registrado durante la vigencia del acuerdo */
+export interface RentalBoardChangeHistoryRow {
+  id: string;
+  rental_agreement_id: string;
+  previous_board_number: string;
+  new_board_number: string;
+  created_at: string;
+}
+
 /** Línea de producto de tienda ligada a un acuerdo */
 export interface StoreItemRow {
   id: string;

@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Eye, Calendar, DollarSign, User, Mail, Phone } from 'lucide-react';
+import { Search, Eye, Pencil, Calendar, DollarSign, User, Mail, Phone } from 'lucide-react';
+import RentalAgreementEditModal from './RentalAgreementEditModal';
+import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
 import { fetchRentalAgreements } from '../services/rentalAgreementService';
+import { fetchStoreProducts } from '../services/storeCatalogService';
 import { fetchSurfboardInventory } from '../services/surfboardInventoryService';
+import type { StoreProductRow } from '../types/storeProduct';
 import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import {
@@ -9,6 +13,7 @@ import {
   isPendingPickup,
   isRentalOngoing,
   isReturnInPast,
+  parseDateTimeMs,
 } from '../utils/rentalDisplayStatus';
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 
@@ -19,6 +24,8 @@ export default function AdminDashboard() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
+  const [editingAgreement, setEditingAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
+  const [productCatalog, setProductCatalog] = useState<StoreProductRow[]>([]);
 
   const surfboardByNumber = useMemo(() => {
     const m = new Map<string, SurfboardInventoryRow>();
@@ -54,9 +61,37 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  /** Recarga datos sin cerrar el modal de edición (p. ej. tras cambio de tabla con historial). */
+  const refreshAgreementsData = useCallback(async () => {
+    try {
+      const [rows, inv] = await Promise.all([fetchRentalAgreements(), fetchSurfboardInventory()]);
+      setAgreements(rows);
+      setSurfboards(inv);
+      setEditingAgreement((prev) => {
+        if (!prev) return null;
+        return rows.find((r) => r.id === prev.id) ?? prev;
+      });
+      setSelectedAgreement((prev) => {
+        if (!prev) return null;
+        return rows.find((r) => r.id === prev.id) ?? prev;
+      });
+    } catch (err) {
+      console.error('Error refreshing agreements:', err);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     loadAgreements();
   }, [loadAgreements]);
+
+  useEffect(() => {
+    fetchStoreProducts()
+      .then(setProductCatalog)
+      .catch(() => {
+        /* catálogo opcional */
+      });
+  }, []);
 
   const filteredAgreements = agreements.filter((agreement) => {
     const q = searchTerm.toLowerCase();
@@ -86,16 +121,23 @@ export default function AdminDashboard() {
       if (isReturnInPast(a)) return 1;
       return 2;
     };
+    const sortKeyMs = (a: (typeof filteredAgreements)[number]) => {
+      const ret = parseDateTimeMs(a.return_time);
+      if (ret !== null) return ret;
+      return new Date(a.created_at).getTime();
+    };
     return [...filteredAgreements].sort((a, b) => {
       const ga = groupRank(a);
       const gb = groupRank(b);
       if (ga !== gb) return ga - gb;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return sortKeyMs(b) - sortKeyMs(a);
     });
   }, [filteredAgreements]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+  const formatDateTime = (value: string | null | undefined) => {
+    const ms = parseDateTimeMs(value ?? null);
+    if (ms === null) return '—';
+    return new Date(ms).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -197,7 +239,7 @@ export default function AdminDashboard() {
                     Estado
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
-                    Fecha
+                    Fecha de retorno
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
                     Acciones
@@ -257,16 +299,29 @@ export default function AdminDashboard() {
                       })()}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-400">
-                      {formatDate(agreement.created_at)}
+                      {formatDateTime(agreement.return_time)}
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAgreement(agreement)}
-                        className="text-blue-600 hover:text-blue-800 dark:text-cyan-400 dark:hover:text-cyan-300 transition"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAgreement(agreement)}
+                          className="text-blue-600 hover:text-blue-800 dark:text-cyan-400 dark:hover:text-cyan-300 transition p-1 rounded"
+                          title="Ver detalle"
+                          aria-label="Ver detalle del acuerdo"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingAgreement(agreement)}
+                          className="text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 transition p-1 rounded"
+                          title="Editar acuerdo"
+                          aria-label="Editar acuerdo"
+                        >
+                          <Pencil className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -281,6 +336,20 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {editingAgreement && (
+        <RentalAgreementEditModal
+          agreement={editingAgreement}
+          boards={surfboards}
+          productCatalog={productCatalog}
+          onClose={() => setEditingAgreement(null)}
+          onSaved={() => {
+            setEditingAgreement(null);
+            void loadAgreements();
+          }}
+          onRefresh={refreshAgreementsData}
+        />
+      )}
 
       {selectedAgreement && (
         <div
@@ -326,7 +395,7 @@ export default function AdminDashboard() {
                   <div>
                     <div className="text-sm text-gray-500 dark:text-slate-500">Fecha de Registro</div>
                     <div className="font-semibold text-gray-900 dark:text-slate-100">
-                      {formatDate(selectedAgreement.created_at)}
+                      {formatDateTime(selectedAgreement.created_at)}
                     </div>
                   </div>
                 </div>
@@ -377,7 +446,13 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="border-t-2 border-gray-200 dark:border-slate-700 pt-6">
+              <div className="border-t-2 border-gray-200 dark:border-slate-700 pt-6 space-y-6">
+                <RentalBoardChangeHistoryList
+                  agreementId={selectedAgreement.id}
+                  boards={surfboards}
+                  refreshKey={selectedAgreement.surfboard_number ?? ''}
+                  showEmptyHint
+                />
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="flex items-start gap-3">
                     <DollarSign className="w-5 h-5 text-green-600 dark:text-emerald-400 mt-1" />

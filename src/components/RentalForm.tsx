@@ -1,10 +1,47 @@
-import { useState } from 'react';
-import { Waves, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Waves, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import SignatureCanvas from './SignatureCanvas';
+import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
-import { insertRentalAgreement } from '../services/rentalAgreementService';
+import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
+import { fetchStoreProducts } from '../services/storeCatalogService';
+import type { StoreProductRow } from '../types/storeProduct';
+
+function newStoreLine(): StoreItemLine {
+  return { id: crypto.randomUUID(), productName: '', price: '' };
+}
+
+function parseMoneyInput(raw: string): number {
+  const t = raw.replace(',', '.').trim();
+  if (t === '') return NaN;
+  const n = parseFloat(t);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+}
+
+function collectStoreLines(
+  rows: StoreItemLine[]
+): { ok: true; lines: { product_name: string; unit_price: number }[] } | { ok: false; message: string } {
+  const lines: { product_name: string; unit_price: number }[] = [];
+  for (const r of rows) {
+    const name = r.productName.trim();
+    const rawPrice = r.price.trim();
+    if (!name && !rawPrice) continue;
+    if (name && !rawPrice) {
+      return { ok: false, message: 'Indica el precio de cada producto de tienda o elimina la fila vacía.' };
+    }
+    if (!name && rawPrice) {
+      return { ok: false, message: 'Indica el nombre del producto o borra el precio en esa fila.' };
+    }
+    const p = parseMoneyInput(rawPrice);
+    if (Number.isNaN(p)) {
+      return { ok: false, message: 'Revisa que los precios de tienda sean números válidos (ej. 10 o 10.50).' };
+    }
+    lines.push({ product_name: name, unit_price: p });
+  }
+  return { ok: true, lines };
+}
 
 interface RentalFormData {
   name: string;
@@ -42,8 +79,26 @@ export default function RentalForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storeItems, setStoreItems] = useState<StoreItemLine[]>([]);
+  const [productCatalog, setProductCatalog] = useState<StoreProductRow[]>([]);
 
-  const getPrice = () => getRentalPriceForSelection(formData.rental_type, formData.rental_duration);
+  useEffect(() => {
+    fetchStoreProducts()
+      .then(setProductCatalog)
+      .catch(() => {
+        /* catálogo opcional; el formulario sigue sin sugerencias */
+      });
+  }, []);
+
+  const getRentalBasePrice = () => getRentalPriceForSelection(formData.rental_type, formData.rental_duration);
+
+  const getStoreItemsSubtotal = () =>
+    storeItems.reduce((sum, row) => {
+      const p = parseMoneyInput(row.price.trim());
+      return sum + (Number.isFinite(p) ? p : 0);
+    }, 0);
+
+  const getContractTotal = () => getRentalBasePrice() + getStoreItemsSubtotal();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -92,26 +147,44 @@ export default function RentalForm() {
       return;
     }
 
+    const storeResult = collectStoreLines(storeItems);
+    if (!storeResult.ok) {
+      setError(storeResult.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const rentalBase = getRentalBasePrice();
+    const storeTotal = storeResult.lines.reduce((s, l) => s + l.unit_price, 0);
+    const contractTotal = rentalBase + storeTotal;
+
     try {
-      await insertRentalAgreement({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address || null,
-        pickup: formData.pickup || null,
-        return_time: formData.return_time || null,
-        surfboard_number: formData.surfboard_number || null,
-        board_checked_by: formData.board_checked_by || null,
-        rental_type: formData.rental_type,
-        rental_duration: formData.rental_duration,
-        rental_price: getPrice(),
-        payment_method: formData.payment_method,
-        signature_data: formData.signature_data,
-        agreed_to_terms: formData.agreed_to_terms,
-        status: 'pending',
-      });
+      await insertRentalAgreementWithStoreItems(
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address || null,
+          pickup: formData.pickup || null,
+          return_time: formData.return_time || null,
+          surfboard_number: formData.surfboard_number || null,
+          board_checked_by: formData.board_checked_by || null,
+          rental_type: formData.rental_type,
+          rental_duration: formData.rental_duration,
+          rental_price: contractTotal,
+          payment_method: formData.payment_method,
+          signature_data: formData.signature_data,
+          agreed_to_terms: formData.agreed_to_terms,
+          status: 'pending',
+        },
+        storeResult.lines
+      );
 
       setIsSuccess(true);
+      setStoreItems([]);
+      fetchStoreProducts()
+        .then(setProductCatalog)
+        .catch(() => {});
       setFormData({
         name: '',
         email: '',
@@ -310,6 +383,98 @@ export default function RentalForm() {
                   <div className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-2">${option.price}</div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-slate-600 pt-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <p className="form-label mb-0">Store Items</p>
+              <button
+                type="button"
+                onClick={() => setStoreItems((prev) => [...prev, newStoreLine()])}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 hover:bg-gray-50 dark:hover:bg-slate-800/50 font-medium text-sm transition"
+              >
+                <Plus className="w-4 h-4" />
+                Add product
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
+              Opcional: productos de tienda. Abre la lista con la flecha o escribe para filtrar; al elegir un producto
+              guardado, el precio se rellena solo. También puedes escribir un nombre y precio nuevos; al enviar el
+              contrato se guardan en el catálogo.
+            </p>
+
+            {storeItems.length > 0 ? (
+              <div className="overflow-x-auto rounded-lg border-2 border-gray-200 dark:border-slate-600">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-slate-800/80">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 min-w-[28rem] w-[28rem]">
+                        Product
+                      </th>
+                      <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-36">Price (USD)</th>
+                      <th className="w-12 px-1" aria-label="Remove row" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
+                    {storeItems.map((row) => (
+                      <tr key={row.id}>
+                        <td className="px-3 py-2 align-top min-w-[28rem] w-[28rem]">
+                          <StoreProductLineInput
+                            row={row}
+                            catalog={productCatalog}
+                            onChange={(lineId, patch) =>
+                              setStoreItems((prev) =>
+                                prev.map((r) => (r.id === lineId ? { ...r, ...patch } : r))
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="px-3 py-2 align-top">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={row.price}
+                            onChange={(e) =>
+                              setStoreItems((prev) =>
+                                prev.map((r) => (r.id === row.id ? { ...r, price: e.target.value } : r))
+                              )
+                            }
+                            className="form-input py-2 text-sm"
+                            placeholder="0.00"
+                          />
+                        </td>
+                        <td className="px-1 py-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setStoreItems((prev) => prev.filter((r) => r.id !== row.id))}
+                            className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                            aria-label="Remove line"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-slate-500 italic">No store items added.</p>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-4 justify-end items-baseline text-sm">
+              <span className="text-gray-600 dark:text-slate-400">
+                Rental: <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
+              </span>
+              {getStoreItemsSubtotal() > 0 && (
+                <span className="text-gray-600 dark:text-slate-400">
+                  Store: <strong className="text-gray-900 dark:text-slate-100">${getStoreItemsSubtotal().toFixed(2)}</strong>
+                </span>
+              )}
+              <span className="text-base font-bold text-blue-600 dark:text-cyan-400">
+                Contract total: ${getContractTotal().toFixed(2)}
+              </span>
             </div>
           </div>
 

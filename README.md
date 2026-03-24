@@ -135,7 +135,11 @@ La firma se genera en **canvas** y se envía como **data URL** (base64). Es adec
 
 ## Base de datos (Supabase)
 
-La tabla principal es **`rental_agreements`**. Las migraciones en `supabase/migrations/` deben aplicarse en orden (herramienta CLI de Supabase o pegando el SQL en el editor SQL del panel).
+- **`rental_agreements`:** acuerdo de renta; el campo **`rental_price`** es el **total del contrato** (precio de la opción de renta + suma de líneas de tienda).
+- **`rental_agreement_store_items`:** líneas opcionales (nombre de producto + precio) enlazadas con `rental_agreement_id` (relación 1:N). Permite varios productos por contrato sin duplicar columnas en la tabla principal.
+- **`store_products`:** catálogo reutilizable para el autocompletado del formulario. Se **actualiza solo en base de datos** cuando se insertan líneas en `rental_agreement_store_items` (trigger): no hace falta que el cliente escriba directamente en esta tabla. Si el mismo nombre (ignorando mayúsculas/espacios) vuelve a usarse, se actualiza el precio al último valor registrado.
+
+Las migraciones en `supabase/migrations/` deben aplicarse en orden (CLI de Supabase o SQL Editor).
 
 Tras crear usuarios en **Authentication → Users**, el personal puede entrar al panel Admin desde la propia aplicación.
 

@@ -1,16 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Eye, Calendar, DollarSign, User, Mail, Phone, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchRentalAgreements } from '../services/rentalAgreementService';
-import type { RentalAgreementRow } from '../types/rentalAgreement';
+import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
+import {
+  getAdminStatusBadge,
+  isPendingPickup,
+  isRentalOngoing,
+  isReturnInPast,
+} from '../utils/rentalDisplayStatus';
 
 export default function AdminDashboard() {
   const { signOut } = useAuth();
-  const [agreements, setAgreements] = useState<RentalAgreementRow[]>([]);
+  const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAgreement, setSelectedAgreement] = useState<RentalAgreementRow | null>(null);
+  const [selectedAgreement, setSelectedAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
 
   const loadAgreements = useCallback(async () => {
     setLoadError(null);
@@ -38,6 +44,26 @@ export default function AdminDashboard() {
       (agreement.surfboard_number && agreement.surfboard_number.includes(searchTerm))
   );
 
+  /**
+   * 1) Pendiente de retirar
+   * 2) Vencidos
+   * 3) Resto
+   * Dentro de cada grupo: más recientes arriba.
+   */
+  const displayAgreements = useMemo(() => {
+    const groupRank = (a: (typeof filteredAgreements)[number]) => {
+      if (isPendingPickup(a)) return 0;
+      if (isReturnInPast(a)) return 1;
+      return 2;
+    };
+    return [...filteredAgreements].sort((a, b) => {
+      const ga = groupRank(a);
+      const gb = groupRank(b);
+      if (ga !== gb) return ga - gb;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [filteredAgreements]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -46,21 +72,6 @@ export default function AdminDashboard() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200';
-      case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200';
-    }
   };
 
   if (loading) {
@@ -123,15 +134,15 @@ export default function AdminDashboard() {
             </div>
             <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-md">
               <div className="text-3xl font-bold">
-                {agreements.filter((a) => a.status === 'active').length}
+                {agreements.filter((a) => isRentalOngoing(a)).length}
               </div>
-              <div className="text-green-100 mt-1">Activos</div>
+              <div className="text-green-100 mt-1">Activos (en plazo)</div>
             </div>
-            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-6 rounded-xl shadow-md">
+            <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-xl shadow-md">
               <div className="text-3xl font-bold">
-                {agreements.filter((a) => a.status === 'pending').length}
+                {agreements.filter((a) => isReturnInPast(a)).length}
               </div>
-              <div className="text-yellow-100 mt-1">Pendientes</div>
+              <div className="text-red-100 mt-1">Vencidos</div>
             </div>
             <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-md">
               <div className="text-3xl font-bold">
@@ -174,7 +185,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                {filteredAgreements.map((agreement) => (
+                {displayAgreements.map((agreement) => (
                   <tr key={agreement.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 dark:text-slate-100">{agreement.name}</div>
@@ -203,13 +214,16 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          agreement.status
-                        )}`}
-                      >
-                        {agreement.status}
-                      </span>
+                      {(() => {
+                        const badge = getAdminStatusBadge(agreement);
+                        return (
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${badge.colorClass}`}
+                          >
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-400">
                       {formatDate(agreement.created_at)}
@@ -229,7 +243,7 @@ export default function AdminDashboard() {
             </table>
           </div>
 
-          {filteredAgreements.length === 0 && (
+          {displayAgreements.length === 0 && (
             <div className="text-center py-12 text-gray-500 dark:text-slate-500">
               No se encontraron acuerdos de renta
             </div>
@@ -355,16 +369,54 @@ export default function AdminDashboard() {
 
                   <div>
                     <div className="text-sm text-gray-500 dark:text-slate-500">Estado</div>
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                        selectedAgreement.status
-                      )}`}
-                    >
-                      {selectedAgreement.status}
-                    </span>
+                    {(() => {
+                      const badge = getAdminStatusBadge(selectedAgreement);
+                      return (
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badge.colorClass}`}
+                        >
+                          {badge.label}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
+
+              {(() => {
+                const lines = [...(selectedAgreement.rental_agreement_store_items ?? [])].sort(
+                  (a, b) => a.sort_order - b.sort_order
+                );
+                if (lines.length === 0) return null;
+                return (
+                  <div className="border-t-2 border-gray-200 dark:border-slate-700 pt-6">
+                    <div className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Store items</div>
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-600">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 dark:bg-slate-800/80">
+                          <tr>
+                            <th className="text-left px-3 py-2 text-gray-600 dark:text-slate-400">Producto</th>
+                            <th className="text-right px-3 py-2 text-gray-600 dark:text-slate-400">Precio</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
+                          {lines.map((item) => (
+                            <tr key={item.id}>
+                              <td className="px-3 py-2 text-gray-900 dark:text-slate-100">{item.product_name}</td>
+                              <td className="px-3 py-2 text-right font-medium text-green-600 dark:text-emerald-400">
+                                ${Number(item.unit_price).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+                      El precio total del contrato incluye renta y estos productos.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {selectedAgreement.signature_data && (
                 <div className="border-t-2 border-gray-200 dark:border-slate-700 pt-6">

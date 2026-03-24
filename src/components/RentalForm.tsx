@@ -7,7 +7,9 @@ import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInp
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
 import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
 import { fetchStoreProducts } from '../services/storeCatalogService';
+import { fetchSurfboardInventory } from '../services/surfboardInventoryService';
 import type { StoreProductRow } from '../types/storeProduct';
+import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 
 function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '' };
@@ -83,6 +85,8 @@ export default function RentalForm() {
   const [error, setError] = useState<string | null>(null);
   const [storeItems, setStoreItems] = useState<StoreItemLine[]>([]);
   const [productCatalog, setProductCatalog] = useState<StoreProductRow[]>([]);
+  const [surfboards, setSurfboards] = useState<SurfboardInventoryRow[]>([]);
+  const [surfboardsLoading, setSurfboardsLoading] = useState(true);
 
   useEffect(() => {
     fetchStoreProducts()
@@ -90,6 +94,24 @@ export default function RentalForm() {
       .catch(() => {
         /* catálogo opcional; el formulario sigue sin sugerencias */
       });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSurfboardsLoading(true);
+    fetchSurfboardInventory()
+      .then((rows) => {
+        if (!cancelled) setSurfboards(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setSurfboards([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSurfboardsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getRentalBasePrice = () => getRentalPriceForSelection(formData.rental_type, formData.rental_duration);
@@ -149,6 +171,28 @@ export default function RentalForm() {
       return;
     }
 
+    if (surfboardsLoading) {
+      setError('Espera a que cargue el inventario de tablas.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (surfboards.length === 0) {
+      setError('No hay tablas disponibles en inventario. Contacta a la escuela.');
+      setIsSubmitting(false);
+      return;
+    }
+    const boardNum = formData.surfboard_number.trim();
+    if (!boardNum) {
+      setError('Selecciona una tabla del inventario.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (!surfboards.some((b) => b.board_number === boardNum)) {
+      setError('La tabla seleccionada no es válida.');
+      setIsSubmitting(false);
+      return;
+    }
+
     const storeResult = collectStoreLines(storeItems);
     if (!storeResult.ok) {
       setError(storeResult.message);
@@ -169,7 +213,7 @@ export default function RentalForm() {
           address: formData.address || null,
           pickup: formData.pickup || null,
           return_time: formData.return_time || null,
-          surfboard_number: formData.surfboard_number || null,
+          surfboard_number: boardNum,
           board_checked_by: formData.board_checked_by || null,
           rental_type: formData.rental_type,
           rental_duration: formData.rental_duration,
@@ -338,17 +382,43 @@ export default function RentalForm() {
 
             <div>
               <label className="form-label" htmlFor="rental-board-num">
-                Surfboard Number
+                Tabla de surf *
               </label>
-              <input
-                id="rental-board-num"
-                type="text"
-                name="surfboard_number"
-                value={formData.surfboard_number}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="Ex: #123"
-              />
+              {surfboardsLoading ? (
+                <p className="text-sm text-gray-600 dark:text-slate-400 py-2">Cargando inventario de tablas…</p>
+              ) : surfboards.length === 0 ? (
+                <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  No hay tablas en inventario. El personal debe registrar tablas en el panel administrativo antes de
+                  poder enviar contratos.
+                </p>
+              ) : (
+                <>
+                  <select
+                    id="rental-board-num"
+                    name="surfboard_number"
+                    value={formData.surfboard_number}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    required
+                  >
+                    <option value="">Selecciona una tabla…</option>
+                    {surfboards.map((b) => {
+                      const desc = b.description?.trim();
+                      const short =
+                        desc && desc.length > 90 ? `${desc.slice(0, 90)}…` : desc;
+                      return (
+                        <option key={b.id} value={b.board_number}>
+                          {b.board_number}
+                          {short ? ` — ${short}` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
+                    Solo se pueden elegir tablas dadas de alta en el inventario.
+                  </p>
+                </>
+              )}
             </div>
 
             <div>
@@ -582,7 +652,9 @@ export default function RentalForm() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting || surfboardsLoading || surfboards.length === 0
+            }
             className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-cyan-800 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-cyan-700 dark:hover:from-blue-900 dark:hover:to-cyan-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Rental Agreement'}

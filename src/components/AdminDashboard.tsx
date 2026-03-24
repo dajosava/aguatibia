@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Eye, Calendar, DollarSign, User, Mail, Phone, LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { Search, Eye, Calendar, DollarSign, User, Mail, Phone } from 'lucide-react';
 import { fetchRentalAgreements } from '../services/rentalAgreementService';
 import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
 import {
@@ -11,7 +10,6 @@ import {
 } from '../utils/rentalDisplayStatus';
 
 export default function AdminDashboard() {
-  const { signOut } = useAuth();
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -98,21 +96,11 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 p-4 md:p-8">
+    <div className="text-gray-900 dark:text-slate-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-slate-100 mb-2">Panel de Administración</h1>
-            <p className="text-gray-600 dark:text-slate-400">Agua Tibia Surf School - Acuerdos de Renta</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium shadow-sm dark:shadow-none"
-          >
-            <LogOut className="w-4 h-4" />
-            Cerrar sesión
-          </button>
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-slate-100 mb-2">Acuerdos de renta</h1>
+          <p className="text-gray-600 dark:text-slate-400">Agua Tibia Surf School — listado y detalle de contratos</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg dark:shadow-slate-950/80 p-6 mb-6">

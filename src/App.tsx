@@ -2,6 +2,9 @@ import { useState } from 'react';
 import RentalForm from './components/RentalForm';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import AdminLayout from './components/admin/AdminLayout';
+import SurfboardInventoryPage from './components/admin/SurfboardInventoryPage';
+import type { AdminSection } from './components/admin/AdminLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LayoutDashboard, FileText } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
@@ -9,6 +12,7 @@ import ThemeToggle from './components/ThemeToggle';
 function AppContent() {
   const { session, loading } = useAuth();
   const [view, setView] = useState<'form' | 'admin'>('form');
+  const [adminSection, setAdminSection] = useState<AdminSection>('contracts');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
@@ -60,7 +64,9 @@ function AppContent() {
         ) : !session ? (
           <AdminLogin />
         ) : (
-          <AdminDashboard />
+          <AdminLayout active={adminSection} onNavigate={setAdminSection}>
+            {adminSection === 'contracts' ? <AdminDashboard /> : <SurfboardInventoryPage />}
+          </AdminLayout>
         )}
       </main>
 

@@ -1,5 +1,11 @@
 /** Estados de negocio del acuerdo en base de datos */
-export type RentalAgreementStatus = 'pending' | 'active' | 'completed' | 'cancelled';
+export type RentalAgreementStatus =
+  | 'pending'
+  | 'active'
+  | 'completed'
+  | 'cancelled'
+  /** Check-out en panel admin: contrato finalizado y tabla liberada en inventario */
+  | 'cerrado';
 
 /** Cambio de tabla registrado durante la vigencia del acuerdo */
 export interface RentalBoardChangeHistoryRow {

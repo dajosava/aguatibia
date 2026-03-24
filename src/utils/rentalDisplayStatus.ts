@@ -15,7 +15,7 @@ export const parseReturnDateMs = parseDateTimeMs;
  * Reserva por adelantado: la fecha/hora de inicio (pickup) aún no llegó.
  */
 export function isPendingPickup(agreement: Pick<RentalAgreementRow, 'status' | 'pickup'>): boolean {
-  if (agreement.status === 'cancelled') return false;
+  if (agreement.status === 'cancelled' || agreement.status === 'cerrado') return false;
   const pickup = parseDateTimeMs(agreement.pickup);
   if (pickup === null) return false;
   return pickup > Date.now();
@@ -27,7 +27,7 @@ export function isPendingPickup(agreement: Pick<RentalAgreementRow, 'status' | '
 export function isRentalOngoing(
   agreement: Pick<RentalAgreementRow, 'status' | 'pickup' | 'return_time'>
 ): boolean {
-  if (agreement.status === 'cancelled') return false;
+  if (agreement.status === 'cancelled' || agreement.status === 'cerrado') return false;
   if (isPendingPickup(agreement)) return false;
 
   const ret = parseDateTimeMs(agreement.return_time);
@@ -36,7 +36,7 @@ export function isRentalOngoing(
 }
 
 export function isReturnInPast(agreement: Pick<RentalAgreementRow, 'status' | 'return_time' | 'pickup'>): boolean {
-  if (agreement.status === 'cancelled') return false;
+  if (agreement.status === 'cancelled' || agreement.status === 'cerrado') return false;
   const ret = parseDateTimeMs(agreement.return_time);
   if (ret === null) return false;
   return ret < Date.now();
@@ -52,9 +52,18 @@ const DB_LABEL_ES: Record<string, string> = {
   active: 'Activo',
   completed: 'Completado',
   cancelled: 'Cancelado',
+  cerrado: 'Cerrado',
 };
 
 export function getAdminStatusBadge(agreement: RentalAgreementRow): StatusBadge {
+  if (agreement.status === 'cerrado') {
+    return {
+      label: 'Cerrado',
+      colorClass:
+        'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-200',
+    };
+  }
+
   if (agreement.status === 'cancelled') {
     return {
       label: 'Cancelado',
@@ -104,6 +113,8 @@ function getDbStatusColor(status: string): string {
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200';
     case 'cancelled':
       return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200';
+    case 'cerrado':
+      return 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-200';
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200';
   }

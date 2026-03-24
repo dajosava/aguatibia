@@ -1,9 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, ArrowLeftRight } from 'lucide-react';
+import { Plus, Trash2, ArrowLeftRight, DoorOpen } from 'lucide-react';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import { getRentalPriceForSelection } from '../config/rentalOptions';
-import { swapRentalSurfboard, updateRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
+import {
+  checkoutCloseRentalAgreement,
+  swapRentalSurfboard,
+  updateRentalAgreementWithStoreItems,
+} from '../services/rentalAgreementService';
 import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
 import type { StoreProductRow } from '../types/storeProduct';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
@@ -90,6 +94,9 @@ export default function RentalAgreementEditModal({
   const [showSwapPanel, setShowSwapPanel] = useState(false);
   const [swapNewBoard, setSwapNewBoard] = useState('');
   const [swapping, setSwapping] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  const isClosed = agreement.status === 'cerrado';
 
   useEffect(() => {
     setPickup(isoToDatetimeLocalValue(agreement.pickup));
@@ -126,8 +133,29 @@ export default function RentalAgreementEditModal({
 
   const currentBoardNum = agreement.surfboard_number?.trim() ?? '';
 
+  const handleCheckoutClose = async () => {
+    setError(null);
+    if (
+      !window.confirm(
+        '¿Cerrar este contrato (check-out)? El acuerdo pasará a estado Cerrado y la tabla asignada volverá a Disponible en el inventario.'
+      )
+    ) {
+      return;
+    }
+    setClosing(true);
+    try {
+      await checkoutCloseRentalAgreement(agreement.id);
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cerrar el contrato');
+    } finally {
+      setClosing(false);
+    }
+  };
+
   const handleRegisterSwap = async () => {
     setError(null);
+    if (isClosed) return;
     if (boardsDisponibles.length === 0) {
       setError('No hay tablas en estado Disponible para asignar.');
       return;
@@ -163,6 +191,7 @@ export default function RentalAgreementEditModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (isClosed) return;
 
     const storeResult = collectStoreLines(storeItems);
     if (!storeResult.ok) {
@@ -205,13 +234,36 @@ export default function RentalAgreementEditModal({
       >
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-slate-900 p-6 text-white border-b border-blue-900/30">
           <h2 id="edit-agreement-title" className="text-2xl font-bold">
-            Editar acuerdo
+            {isClosed ? 'Acuerdo cerrado' : 'Editar acuerdo'}
           </h2>
           <p className="text-sm text-blue-100 dark:text-slate-400 mt-1">
             {agreement.name} — {agreement.rental_type.replace(/_/g, ' ')} · {agreement.rental_duration}
           </p>
         </div>
 
+        {isClosed ? (
+          <div className="p-6 space-y-4">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            <div className="rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 p-5">
+              <p className="font-semibold text-gray-900 dark:text-slate-100">Check-out completado</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400 mt-2">
+                Este contrato está en estado <strong>Cerrado</strong>. La tabla asignada quedó como{' '}
+                <strong>Disponible</strong> en el inventario para otra renta.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full px-4 py-3 rounded-lg bg-blue-950 hover:bg-[#0c1d3a] text-white font-semibold ring-1 ring-blue-900/60"
+            >
+              Volver
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <p className="text-sm text-gray-600 dark:text-slate-400">
             Ajusta fechas, productos de tienda o el estado del pago. Para sustituir la tabla durante la renta usa{' '}
@@ -431,6 +483,26 @@ export default function RentalAgreementEditModal({
             <span className="text-sm text-gray-800 dark:text-slate-200">Contrato pagado</span>
           </label>
 
+          <div className="rounded-xl border-2 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/60 dark:bg-slate-800/40 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2">
+              <DoorOpen className="w-4 h-4 shrink-0" aria-hidden />
+              Check-out
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-slate-400">
+              Cierra el contrato cuando el cliente devuelve la tabla. El acuerdo pasa a estado{' '}
+              <strong className="text-gray-800 dark:text-slate-200">Cerrado</strong> y la tabla asignada vuelve a{' '}
+              <strong className="text-gray-800 dark:text-slate-200">Disponible</strong> en el inventario.
+            </p>
+            <button
+              type="button"
+              onClick={handleCheckoutClose}
+              disabled={closing}
+              className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-semibold disabled:opacity-50"
+            >
+              {closing ? 'Cerrando…' : 'Check-out — cerrar contrato'}
+            </button>
+          </div>
+
           <div className="flex flex-wrap gap-4 justify-end items-baseline text-sm border-t border-gray-200 dark:border-slate-600 pt-4">
             <span className="text-gray-600 dark:text-slate-400">
               Renta base:{' '}
@@ -464,6 +536,7 @@ export default function RentalAgreementEditModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

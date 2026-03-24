@@ -76,6 +76,14 @@ export async function swapRentalSurfboard(agreementId: string, newBoardNumber: s
   if (error) throw error;
 }
 
+/** Check-out: acuerdo → cerrado; tabla del contrato → Disponible en inventario (RPC SECURITY DEFINER). */
+export async function checkoutCloseRentalAgreement(agreementId: string): Promise<void> {
+  const { error } = await supabase.rpc('rental_checkout_close', {
+    p_agreement_id: agreementId,
+  });
+  if (error) throw error;
+}
+
 /** Actualiza acuerdo y sustituye por completo las líneas de tienda (mismo criterio de precio total que en el alta). La tabla se cambia solo con swapRentalSurfboard. */
 export async function updateRentalAgreementWithStoreItems(
   agreementId: string,

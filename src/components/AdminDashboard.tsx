@@ -112,11 +112,13 @@ export default function AdminDashboard() {
   /**
    * 1) Pendiente de retirar
    * 2) Vencidos
-   * 3) Resto
+   * 3) Resto (activos, etc.)
+   * 4) Cerrados (check-out)
    * Dentro de cada grupo: más recientes arriba.
    */
   const displayAgreements = useMemo(() => {
     const groupRank = (a: (typeof filteredAgreements)[number]) => {
+      if (a.status === 'cerrado') return 3;
       if (isPendingPickup(a)) return 0;
       if (isReturnInPast(a)) return 1;
       return 2;

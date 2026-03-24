@@ -136,7 +136,7 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     storeItemsSection: 'Store items',
     addProduct: 'Add product',
     storeHelp:
-      'Optional: shop products. Open the list with the arrow or type to filter; when you pick a saved product, the price fills in automatically. You can also enter a new name and price; when you submit, they are saved to the catalog.',
+      'Optional: shop products. Open the list with the arrow or type to filter; when you pick a saved product, the price fills in automatically.',
     storeTableProduct: 'Product',
     storeTablePrice: 'Price (USD)',
     removeRowAria: 'Remove line',
@@ -221,7 +221,7 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     storeItemsSection: 'Productos de tienda',
     addProduct: 'Añadir producto',
     storeHelp:
-      'Opcional: productos de tienda. Abre la lista con la flecha o escribe para filtrar; al elegir un producto guardado, el precio se rellena solo. También puedes escribir un nombre y precio nuevos; al enviar el contrato se guardan en el catálogo.',
+      'Opcional: productos de tienda. Abre la lista con la flecha o escribe para filtrar; al elegir un producto guardado, el precio se rellena solo.',
     storeTableProduct: 'Producto',
     storeTablePrice: 'Precio (USD)',
     removeRowAria: 'Quitar línea',

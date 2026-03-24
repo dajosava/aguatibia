@@ -212,6 +212,17 @@ export default function AdminDashboard() {
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200 uppercase">
                         {agreement.payment_method}
                       </span>
+                      <div className="mt-1.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                            agreement.contract_paid === true
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
+                              : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'
+                          }`}
+                        >
+                          {agreement.contract_paid === true ? 'Pagado' : 'Pendiente de pago'}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       {(() => {
@@ -365,6 +376,16 @@ export default function AdminDashboard() {
                     <div className="font-semibold text-gray-900 dark:text-slate-100 uppercase">
                       {selectedAgreement.payment_method}
                     </div>
+                    <div className="text-sm text-gray-500 dark:text-slate-500 mt-3">Estado del pago</div>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                        selectedAgreement.contract_paid === true
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
+                          : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200'
+                      }`}
+                    >
+                      {selectedAgreement.contract_paid === true ? 'Pagado' : 'Pendiente de pago'}
+                    </span>
                   </div>
 
                   <div>

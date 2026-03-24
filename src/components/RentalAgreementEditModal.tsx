@@ -6,6 +6,7 @@ import { getRentalPriceForSelection } from '../config/rentalOptions';
 import {
   checkoutCloseRentalAgreement,
   swapRentalSurfboard,
+  syncRentalAgreementSurfboards,
   updateRentalAgreementContractPaid,
   updateRentalAgreementWithStoreItems,
 } from '../services/rentalAgreementService';
@@ -14,6 +15,7 @@ import type { StoreProductRow } from '../types/storeProduct';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
+import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 
 function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '' };
@@ -66,6 +68,10 @@ function publicBoardLabel(boards: SurfboardInventoryRow[], boardNumber: string):
   return num;
 }
 
+function newBoardEditLine(): { id: string; boardNumber: string } {
+  return { id: crypto.randomUUID(), boardNumber: '' };
+}
+
 type Props = {
   agreement: RentalAgreementWithStoreItems;
   boards: SurfboardInventoryRow[];
@@ -93,9 +99,15 @@ export default function RentalAgreementEditModal({
 
   const [showSwapPanel, setShowSwapPanel] = useState(false);
   const [swapNewBoard, setSwapNewBoard] = useState('');
+  const [swapSourceBoard, setSwapSourceBoard] = useState('');
   const [swapping, setSwapping] = useState(false);
   const [closing, setClosing] = useState(false);
   const [registeringPayment, setRegisteringPayment] = useState(false);
+  /** Tras «Registrar pago» OK: el padre puede seguir mostrando contract_paid desactualizado hasta refrescar; evita bloquear el check-out. */
+  const [paymentJustRegistered, setPaymentJustRegistered] = useState(false);
+  const [boardEditLines, setBoardEditLines] = useState<{ id: string; boardNumber: string }[]>(() => [
+    newBoardEditLine(),
+  ]);
 
   const isClosed = agreement.status === 'cerrado';
 
@@ -114,14 +126,64 @@ export default function RentalAgreementEditModal({
     setError(null);
     setShowSwapPanel(false);
     setSwapNewBoard('');
+    setSwapSourceBoard(getAgreementBoardNumbers(agreement)[0] ?? '');
+    const surf = agreement.rental_agreement_surfboards;
+    if (surf && surf.length > 0) {
+      setBoardEditLines(
+        [...surf]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((l) => ({ id: l.id, boardNumber: l.board_number.trim() }))
+      );
+    } else {
+      const nums = getAgreementBoardNumbers(agreement);
+      setBoardEditLines(
+        nums.length > 0 ? nums.map((n) => ({ id: crypto.randomUUID(), boardNumber: n })) : [newBoardEditLine()]
+      );
+    }
   }, [agreement]);
+
+  useEffect(() => {
+    setPaymentJustRegistered(false);
+  }, [agreement.id]);
+
+  useEffect(() => {
+    if (agreement.contract_paid === true) {
+      setPaymentJustRegistered(false);
+    }
+  }, [agreement.contract_paid]);
 
   const boardsDisponibles = useMemo(
     () => boards.filter((b) => (b.status ?? 'Disponible') === 'Disponible'),
     [boards]
   );
 
-  const rentalBase = getRentalPriceForSelection(agreement.rental_type, agreement.rental_duration);
+  const agreementBoards = useMemo(() => getAgreementBoardNumbers(agreement), [agreement]);
+
+  const boardsForEditRow = (rowId: string, rowBoard: string): SurfboardInventoryRow[] => {
+    const selectedElsewhere = new Set(
+      boardEditLines
+        .filter((l) => l.id !== rowId)
+        .map((l) => l.boardNumber.trim())
+        .filter((n) => n.length > 0)
+    );
+    const assignedLower = new Set(
+      boardEditLines.map((l) => l.boardNumber.trim().toLowerCase()).filter((n) => n.length > 0)
+    );
+    return boards.filter((b) => {
+      const num = b.board_number;
+      if (num === rowBoard) return true;
+      if (selectedElsewhere.has(num)) return false;
+      const disp = (b.status ?? 'Disponible') === 'Disponible';
+      return disp || assignedLower.has(num.toLowerCase());
+    });
+  };
+
+  /** Misma regla que el formulario público: precio de la opción × cantidad de tablas. */
+  const rentalUnit = getRentalPriceForSelection(agreement.rental_type, agreement.rental_duration);
+  const filledBoardCount = boardEditLines.filter((l) => l.boardNumber.trim().length > 0).length;
+  const boardCountForRent =
+    filledBoardCount > 0 ? filledBoardCount : Math.max(1, agreementBoards.length);
+  const rentalBase = rentalUnit * boardCountForRent;
 
   const getStoreItemsSubtotal = () =>
     storeItems.reduce((sum, row) => {
@@ -131,10 +193,8 @@ export default function RentalAgreementEditModal({
 
   const contractTotal = rentalBase + getStoreItemsSubtotal();
 
-  const currentBoardNum = agreement.surfboard_number?.trim() ?? '';
-
-  /** Solo el valor guardado en el acuerdo habilita check-out (evita cerrar con pago pendiente). */
-  const paymentRecordedAsPaid = agreement.contract_paid === true;
+  /** Valor en BD o registro reciente en esta sesión (evita UI bloqueada si el refresco no trae contract_paid). */
+  const paymentRecordedAsPaid = agreement.contract_paid === true || paymentJustRegistered;
 
   const handleCheckoutClose = async () => {
     setError(null);
@@ -168,6 +228,7 @@ export default function RentalAgreementEditModal({
     setRegisteringPayment(true);
     try {
       await updateRentalAgreementContractPaid(agreement.id, true);
+      setPaymentJustRegistered(true);
       await onRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar el pago');
@@ -192,14 +253,23 @@ export default function RentalAgreementEditModal({
       setError('La nueva tabla debe estar disponible en el inventario.');
       return;
     }
-    if (next === currentBoardNum) {
-      setError('Elige una tabla distinta a la asignada ahora.');
+    const oldNum = swapSourceBoard.trim() || agreementBoards[0] || '';
+    if (!oldNum) {
+      setError('No hay tabla asignada en el contrato.');
+      return;
+    }
+    if (!agreementBoards.includes(oldNum)) {
+      setError('Selecciona una tabla válida del contrato.');
+      return;
+    }
+    if (next === oldNum) {
+      setError('Elige una tabla distinta a la que sustituyes.');
       return;
     }
 
     setSwapping(true);
     try {
-      await swapRentalSurfboard(agreement.id, next);
+      await swapRentalSurfboard(agreement.id, oldNum, next);
       await onRefresh();
       setSwapNewBoard('');
       setShowSwapPanel(false);
@@ -222,12 +292,39 @@ export default function RentalAgreementEditModal({
       return;
     }
 
+    const nums = boardEditLines.map((l) => l.boardNumber.trim()).filter((n) => n.length > 0);
+    if (nums.length === 0) {
+      setError('Indica al menos una tabla.');
+      return;
+    }
+    if (nums.length !== boardEditLines.length) {
+      setError('Completa todas las tablas o elimina las filas vacías.');
+      return;
+    }
+    const uniq = new Set(nums.map((n) => n.toLowerCase()));
+    if (uniq.size !== nums.length) {
+      setError('No puedes repetir la misma tabla en el contrato.');
+      return;
+    }
+    for (const n of nums) {
+      if (!boards.some((b) => b.board_number === n)) {
+        setError('Una de las tablas no existe en el inventario.');
+        return;
+      }
+    }
+
+    const boardCount = nums.length;
+    const rentalTotal = rentalUnit * boardCount;
+    const storeTotal = storeResult.lines.reduce((s, l) => s + l.unit_price, 0);
+    const nextRentalPrice = Math.round((rentalTotal + storeTotal) * 100) / 100;
+
     setSaving(true);
     try {
+      await syncRentalAgreementSurfboards(agreement.id, nums);
       await updateRentalAgreementWithStoreItems(
         agreement.id,
         {
-          rental_price: Math.round((rentalBase + storeResult.lines.reduce((s, l) => s + l.unit_price, 0)) * 100) / 100,
+          rental_price: nextRentalPrice,
           board_checked_by: boardCheckedBy.trim() || null,
           pickup: pickup.trim() || null,
           return_time: returnTime.trim() || null,
@@ -270,12 +367,26 @@ export default function RentalAgreementEditModal({
                 {error}
               </div>
             )}
-            <div className="rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 p-5">
+            <div className="rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 p-5 space-y-3">
               <p className="font-semibold text-gray-900 dark:text-slate-100">Check-out completado</p>
-              <p className="text-sm text-gray-600 dark:text-slate-400 mt-2">
-                Este contrato está en estado <strong>Cerrado</strong>. La tabla asignada quedó como{' '}
+              <p className="text-sm text-gray-600 dark:text-slate-400">
+                Este contrato está en estado <strong>Cerrado</strong>. Las tablas asignadas quedaron como{' '}
                 <strong>Disponible</strong> en el inventario para otra renta.
               </p>
+              {agreementBoards.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wide">
+                    Tablas del contrato
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {agreementBoards.map((num) => (
+                      <li key={num} className="text-sm font-medium text-blue-700 dark:text-cyan-300">
+                        {publicBoardLabel(boards, num)} <span className="text-gray-500 dark:text-slate-500">({num})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <button
               type="button"
@@ -331,14 +442,57 @@ export default function RentalAgreementEditModal({
 
           <div className="rounded-xl border-2 border-blue-200/80 dark:border-cyan-900/50 bg-blue-50/50 dark:bg-slate-800/40 p-4 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-              <div>
-                <p className="form-label mb-1">Tabla asignada ahora</p>
-                <p className="text-lg font-bold text-blue-700 dark:text-cyan-300">
-                  {currentBoardNum ? publicBoardLabel(boards, currentBoardNum) : '—'}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                  <p className="form-label mb-0">Tablas del contrato</p>
+                  <button
+                    type="button"
+                    onClick={() => setBoardEditLines((prev) => [...prev, newBoardEditLine()])}
+                    className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg border-2 border-dashed border-blue-300 dark:border-cyan-800 text-blue-800 dark:text-cyan-200 text-sm font-medium hover:bg-blue-100/80 dark:hover:bg-slate-800"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Añadir tabla
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-slate-500 mb-3">
+                  Elige tablas Disponibles o las ya asignadas a este contrato. Guarda con «Guardar cambios». Para
+                  sustituir una tabla por otra sin cambiar el número de tablas, usa «Hacer cambio» (aplica a lo guardado
+                  en el servidor).
                 </p>
-                {currentBoardNum && (
-                  <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">Nº en contrato: {currentBoardNum}</p>
-                )}
+                <div className="space-y-3">
+                  {boardEditLines.map((row, index) => (
+                    <div
+                      key={row.id}
+                      className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3 rounded-lg border border-blue-200/80 dark:border-slate-600 bg-white/70 dark:bg-slate-900/50 p-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-medium text-gray-500 dark:text-slate-500 block mb-1">
+                          Tabla {index + 1}
+                        </span>
+                        <SurfboardCombobox
+                          id={`edit-board-${row.id}`}
+                          boards={boardsForEditRow(row.id, row.boardNumber)}
+                          value={row.boardNumber}
+                          onChange={(boardNumber) =>
+                            setBoardEditLines((prev) =>
+                              prev.map((r) => (r.id === row.id ? { ...r, boardNumber } : r))
+                            )
+                          }
+                        />
+                      </div>
+                      {boardEditLines.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setBoardEditLines((prev) => prev.filter((r) => r.id !== row.id))}
+                          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition shrink-0 self-end sm:self-center"
+                          aria-label="Quitar tabla"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
               <button
                 type="button"
@@ -349,7 +503,7 @@ export default function RentalAgreementEditModal({
                     return !was;
                   });
                 }}
-                disabled={boardsDisponibles.length === 0}
+                disabled={boardsDisponibles.length === 0 || agreementBoards.length === 0}
                 className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-cyan-800 dark:hover:bg-cyan-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <ArrowLeftRight className="w-4 h-4" />
@@ -359,11 +513,33 @@ export default function RentalAgreementEditModal({
 
             {showSwapPanel && (
               <div className="pt-3 border-t border-blue-200/80 dark:border-slate-600 space-y-3">
-                <p className="text-sm text-gray-700 dark:text-slate-300">
-                  Busca la nueva tabla (solo en estado Disponible en inventario). Al registrar el cambio, la tabla que
-                  llevaba el cliente ({currentBoardNum || '—'}) pasa a <strong>Disponible</strong> y la nueva a{' '}
-                  <strong>Rentada</strong> en el inventario.
+                <p className="text-xs text-amber-800 dark:text-amber-200/90 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  «Hacer cambio» usa las tablas ya guardadas en el servidor. Si acabas de editar la lista arriba, pulsa
+                  primero <strong>Guardar cambios</strong>.
                 </p>
+                <p className="text-sm text-gray-700 dark:text-slate-300">
+                  Busca la nueva tabla (solo en estado Disponible en inventario). La tabla que sustituyes pasa a{' '}
+                  <strong>Disponible</strong> y la nueva queda <strong>Rentada</strong>.
+                </p>
+                {agreementBoards.length > 1 && (
+                  <div>
+                    <label className="form-label" htmlFor="swap-which-board">
+                      Tabla a sustituir *
+                    </label>
+                    <select
+                      id="swap-which-board"
+                      value={swapSourceBoard}
+                      onChange={(e) => setSwapSourceBoard(e.target.value)}
+                      className="form-input mt-1"
+                    >
+                      {agreementBoards.map((num) => (
+                        <option key={num} value={num}>
+                          {publicBoardLabel(boards, num)} — {num}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="form-label" htmlFor="swap-new-board">
                     Nueva tabla *
@@ -404,7 +580,7 @@ export default function RentalAgreementEditModal({
             <RentalBoardChangeHistoryList
               agreementId={agreement.id}
               boards={boards}
-              refreshKey={agreement.surfboard_number ?? ''}
+              refreshKey={agreementBoards.join('|')}
               innerClassName="pt-3 border-t border-blue-200/80 dark:border-slate-600"
             />
           </div>
@@ -553,8 +729,14 @@ export default function RentalAgreementEditModal({
 
           <div className="flex flex-wrap gap-4 justify-end items-baseline text-sm border-t border-gray-200 dark:border-slate-600 pt-4">
             <span className="text-gray-600 dark:text-slate-400">
-              Renta base:{' '}
-              <strong className="text-gray-900 dark:text-slate-100">${rentalBase.toFixed(2)}</strong>
+              Precio por tabla:{' '}
+              <strong className="text-gray-900 dark:text-slate-100">${rentalUnit.toFixed(2)}</strong>
+            </span>
+            <span className="text-gray-600 dark:text-slate-400">
+              Renta ({boardCountForRent} {boardCountForRent === 1 ? 'tabla' : 'tablas'}):{' '}
+              <strong className="text-gray-900 dark:text-slate-100">
+                ${rentalUnit.toFixed(2)} × {boardCountForRent} = ${rentalBase.toFixed(2)}
+              </strong>
             </span>
             {getStoreItemsSubtotal() > 0 && (
               <span className="text-gray-600 dark:text-slate-400">

@@ -16,6 +16,15 @@ export interface RentalBoardChangeHistoryRow {
   created_at: string;
 }
 
+/** Tabla de surf asignada a un acuerdo (varias por contrato) */
+export interface RentalAgreementSurfboardRow {
+  id: string;
+  rental_agreement_id: string;
+  board_number: string;
+  sort_order: number;
+  created_at?: string;
+}
+
 /** Línea de producto de tienda ligada a un acuerdo */
 export interface StoreItemRow {
   id: string;
@@ -52,6 +61,7 @@ export interface RentalAgreementRow {
 /** Acuerdo con líneas de tienda (respuesta de select anidado) */
 export interface RentalAgreementWithStoreItems extends RentalAgreementRow {
   rental_agreement_store_items?: StoreItemRow[] | null;
+  rental_agreement_surfboards?: RentalAgreementSurfboardRow[] | null;
 }
 
 /** Payload de inserción desde el formulario público */

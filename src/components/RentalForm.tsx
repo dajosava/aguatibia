@@ -16,6 +16,10 @@ function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '' };
 }
 
+function newBoardLine(): { id: string; boardNumber: string } {
+  return { id: crypto.randomUUID(), boardNumber: '' };
+}
+
 function parseMoneyInput(raw: string): number {
   const t = raw.replace(',', '.').trim();
   if (t === '') return NaN;
@@ -53,7 +57,6 @@ interface RentalFormData {
   address: string;
   pickup: string;
   return_time: string;
-  surfboard_number: string;
   board_checked_by: string;
   rental_type: string;
   rental_duration: string;
@@ -70,7 +73,6 @@ export default function RentalForm() {
     address: '',
     pickup: '',
     return_time: '',
-    surfboard_number: '',
     board_checked_by: '',
     rental_type: '',
     rental_duration: '',
@@ -86,6 +88,7 @@ export default function RentalForm() {
   const [productCatalog, setProductCatalog] = useState<StoreProductRow[]>([]);
   const [surfboards, setSurfboards] = useState<SurfboardInventoryRow[]>([]);
   const [surfboardsLoading, setSurfboardsLoading] = useState(true);
+  const [boardLines, setBoardLines] = useState(() => [newBoardLine()]);
 
   useEffect(() => {
     fetchStoreProducts()
@@ -115,13 +118,34 @@ export default function RentalForm() {
 
   const getRentalBasePrice = () => getRentalPriceForSelection(formData.rental_type, formData.rental_duration);
 
+  /** Tablas ya elegidas en el formulario (cada una suma el mismo precio unitario de renta). */
+  const selectedBoardCount = boardLines.filter((l) => l.boardNumber.trim().length > 0).length;
+
+  const getRentalSubtotal = () => {
+    const unit = getRentalBasePrice();
+    if (selectedBoardCount === 0) return 0;
+    return unit * selectedBoardCount;
+  };
+
+  const boardsForRow = (rowId: string, rowBoard: string): SurfboardInventoryRow[] => {
+    const selectedElsewhere = new Set(
+      boardLines
+        .filter((l) => l.id !== rowId)
+        .map((l) => l.boardNumber.trim())
+        .filter((n) => n.length > 0)
+    );
+    return surfboards.filter(
+      (b) => !selectedElsewhere.has(b.board_number) || b.board_number === rowBoard
+    );
+  };
+
   const getStoreItemsSubtotal = () =>
     storeItems.reduce((sum, row) => {
       const p = parseMoneyInput(row.price.trim());
       return sum + (Number.isFinite(p) ? p : 0);
     }, 0);
 
-  const getContractTotal = () => getRentalBasePrice() + getStoreItemsSubtotal();
+  const getContractTotal = () => getRentalSubtotal() + getStoreItemsSubtotal();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -180,16 +204,29 @@ export default function RentalForm() {
       setIsSubmitting(false);
       return;
     }
-    const boardNum = formData.surfboard_number.trim();
-    if (!boardNum) {
-      setError('Selecciona una tabla del inventario.');
+    const nums = boardLines.map((l) => l.boardNumber.trim()).filter((n) => n.length > 0);
+    if (nums.length === 0) {
+      setError('Añade al menos una tabla del inventario.');
       setIsSubmitting(false);
       return;
     }
-    if (!surfboards.some((b) => b.board_number === boardNum)) {
-      setError('La tabla seleccionada no es válida.');
+    if (nums.length !== boardLines.length) {
+      setError('Completa todas las tablas o elimina las filas vacías.');
       setIsSubmitting(false);
       return;
+    }
+    const unique = new Set(nums);
+    if (unique.size !== nums.length) {
+      setError('No puedes asignar la misma tabla dos veces en un mismo contrato.');
+      setIsSubmitting(false);
+      return;
+    }
+    for (const n of nums) {
+      if (!surfboards.some((b) => b.board_number === n)) {
+        setError('Una de las tablas seleccionadas no es válida en el inventario.');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const storeResult = collectStoreLines(storeItems);
@@ -199,7 +236,9 @@ export default function RentalForm() {
       return;
     }
 
-    const rentalBase = getRentalBasePrice();
+    const unitRental = getRentalBasePrice();
+    const boardCount = nums.length;
+    const rentalBase = unitRental * boardCount;
     const storeTotal = storeResult.lines.reduce((s, l) => s + l.unit_price, 0);
     const contractTotal = rentalBase + storeTotal;
 
@@ -212,7 +251,7 @@ export default function RentalForm() {
           address: formData.address || null,
           pickup: formData.pickup || null,
           return_time: formData.return_time || null,
-          surfboard_number: boardNum,
+          surfboard_number: nums[0],
           board_checked_by: formData.board_checked_by || null,
           rental_type: formData.rental_type,
           rental_duration: formData.rental_duration,
@@ -223,7 +262,8 @@ export default function RentalForm() {
           agreed_to_terms: formData.agreed_to_terms,
           status: 'pending',
         },
-        storeResult.lines
+        storeResult.lines,
+        nums
       );
 
       setIsSuccess(true);
@@ -238,7 +278,6 @@ export default function RentalForm() {
         address: '',
         pickup: '',
         return_time: '',
-        surfboard_number: '',
         board_checked_by: '',
         rental_type: '',
         rental_duration: '',
@@ -246,6 +285,7 @@ export default function RentalForm() {
         agreed_to_terms: false,
         signature_data: null,
       });
+      setBoardLines([newBoardLine()]);
 
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (err) {
@@ -378,10 +418,19 @@ export default function RentalForm() {
               />
             </div>
 
-            <div>
-              <label className="form-label" htmlFor="rental-board-num">
-                Tabla de surf *
-              </label>
+            <div className="md:col-span-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+                <label className="form-label mb-0">Tablas de surf *</label>
+                <button
+                  type="button"
+                  onClick={() => setBoardLines((prev) => [...prev, newBoardLine()])}
+                  disabled={surfboardsLoading || surfboards.length === 0}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 text-sm font-medium disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Añadir tabla
+                </button>
+              </div>
               {surfboardsLoading ? (
                 <p className="text-sm text-gray-600 dark:text-slate-400 py-2">Cargando inventario de tablas…</p>
               ) : surfboards.length === 0 ? (
@@ -391,18 +440,44 @@ export default function RentalForm() {
                 </p>
               ) : (
                 <>
-                  <SurfboardCombobox
-                    id="rental-board-num"
-                    boards={surfboards}
-                    value={formData.surfboard_number}
-                    onChange={(boardNumber) =>
-                      setFormData((prev) => ({ ...prev, surfboard_number: boardNumber }))
-                    }
-                    disabled={surfboardsLoading}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
-                    Busca por marca, número o abre la lista. Se muestra marca y número; el contrato guarda el número de
-                    tabla. Solo se listan tablas en estado Disponible en el inventario.
+                  <div className="space-y-3">
+                    {boardLines.map((row, index) => (
+                      <div
+                        key={row.id}
+                        className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50/80 dark:bg-slate-800/40 p-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-medium text-gray-500 dark:text-slate-500 block mb-1">
+                            Tabla {index + 1}
+                          </span>
+                          <SurfboardCombobox
+                            id={`rental-board-${row.id}`}
+                            boards={boardsForRow(row.id, row.boardNumber)}
+                            value={row.boardNumber}
+                            onChange={(boardNumber) =>
+                              setBoardLines((prev) =>
+                                prev.map((r) => (r.id === row.id ? { ...r, boardNumber } : r))
+                              )
+                            }
+                            disabled={surfboardsLoading}
+                          />
+                        </div>
+                        {boardLines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setBoardLines((prev) => prev.filter((r) => r.id !== row.id))}
+                            className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition shrink-0 self-end sm:self-center"
+                            aria-label="Quitar tabla"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+                    Un mismo contrato puede incluir varias tablas (por ejemplo familia o grupo). Cada fila debe ser una
+                    tabla distinta en estado Disponible. Busca por marca o número.
                   </p>
                 </>
               )}
@@ -526,15 +601,25 @@ export default function RentalForm() {
 
             <div className="mt-4 flex flex-wrap gap-4 justify-end items-baseline text-sm">
               <span className="text-gray-600 dark:text-slate-400">
-                Rental: <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
+                Precio por tabla:{' '}
+                <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
               </span>
+              {selectedBoardCount > 0 && (
+                <span className="text-gray-600 dark:text-slate-400">
+                  Renta ({selectedBoardCount} {selectedBoardCount === 1 ? 'tabla' : 'tablas'}):{' '}
+                  <strong className="text-gray-900 dark:text-slate-100">
+                    ${getRentalBasePrice().toFixed(2)} × {selectedBoardCount} = ${getRentalSubtotal().toFixed(2)}
+                  </strong>
+                </span>
+              )}
               {getStoreItemsSubtotal() > 0 && (
                 <span className="text-gray-600 dark:text-slate-400">
-                  Store: <strong className="text-gray-900 dark:text-slate-100">${getStoreItemsSubtotal().toFixed(2)}</strong>
+                  Tienda:{' '}
+                  <strong className="text-gray-900 dark:text-slate-100">${getStoreItemsSubtotal().toFixed(2)}</strong>
                 </span>
               )}
               <span className="text-base font-bold text-blue-600 dark:text-cyan-400">
-                Contract total: ${getContractTotal().toFixed(2)}
+                Total contrato: ${getContractTotal().toFixed(2)}
               </span>
             </div>
           </div>

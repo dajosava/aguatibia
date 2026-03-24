@@ -16,6 +16,7 @@ import {
   parseDateTimeMs,
 } from '../utils/rentalDisplayStatus';
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
+import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 
 export default function AdminDashboard() {
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
@@ -110,12 +111,19 @@ export default function AdminDashboard() {
 
   const filteredAgreements = agreements.filter((agreement) => {
     const q = searchTerm.toLowerCase();
-    const num = agreement.surfboard_number?.trim();
-    const row = num ? surfboardByNumber.get(num.toLowerCase()) : undefined;
-    const surfboardSearch =
-      row != null
-        ? `${formatSurfboardPublicLabel(row)} ${(row.brand ?? '').toLowerCase()} ${row.board_number}`.toLowerCase()
-        : (num ?? '').toLowerCase();
+    const boardNums = getAgreementBoardNumbers(agreement);
+    const surfboardSearch = boardNums
+      .flatMap((num) => {
+        const row = surfboardByNumber.get(num.toLowerCase());
+        return row != null
+          ? [
+              formatSurfboardPublicLabel(row).toLowerCase(),
+              (row.brand ?? '').toLowerCase(),
+              row.board_number.toLowerCase(),
+            ]
+          : [num.toLowerCase()];
+      })
+      .join(' ');
     return (
       agreement.name.toLowerCase().includes(q) ||
       agreement.email.toLowerCase().includes(q) ||
@@ -185,6 +193,8 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  const selectedDetailBoards = selectedAgreement ? getAgreementBoardNumbers(selectedAgreement) : [];
 
   return (
     <div className="text-gray-900 dark:text-slate-100 p-4 md:p-8">
@@ -264,7 +274,9 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                {displayAgreements.map((agreement) => (
+                {displayAgreements.map((agreement) => {
+                  const rowBoards = getAgreementBoardNumbers(agreement);
+                  return (
                   <tr key={agreement.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 dark:text-slate-100">{agreement.name}</div>
@@ -272,8 +284,15 @@ export default function AdminDashboard() {
                       <div className="text-sm text-gray-500 dark:text-slate-400">{agreement.phone}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-blue-600 dark:text-cyan-400">
-                        {surfboardDisplayLabel(agreement.surfboard_number)}
+                      <div className="flex flex-col gap-1">
+                        {rowBoards.map((num) => (
+                          <div key={num} className="text-sm font-bold text-blue-600 dark:text-cyan-400">
+                            {surfboardDisplayLabel(num)}
+                          </div>
+                        ))}
+                        {rowBoards.length === 0 && (
+                          <span className="text-sm text-gray-400 dark:text-slate-500">—</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -341,7 +360,8 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -438,18 +458,25 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {selectedAgreement.surfboard_number && (
-                  <div>
-                    <div className="text-sm text-gray-500 dark:text-slate-500">Tabla</div>
-                    <div className="font-semibold text-blue-600 dark:text-cyan-400 text-lg">
-                      {surfboardDisplayLabel(selectedAgreement.surfboard_number)}
+                {selectedDetailBoards.length > 0 && (
+                  <div className="md:col-span-2">
+                    <div className="text-sm text-gray-500 dark:text-slate-500">
+                      Tabla{selectedDetailBoards.length > 1 ? 's' : ''}
                     </div>
-                    {surfboardByNumber.get(selectedAgreement.surfboard_number.trim().toLowerCase()) == null && (
-                      <div className="text-xs text-amber-600 dark:text-amber-400/90 mt-1">
-                        Nº guardado en el contrato: {selectedAgreement.surfboard_number.trim()} (no está en el inventario
-                        actual)
-                      </div>
-                    )}
+                    <ul className="mt-1 space-y-2">
+                      {selectedDetailBoards.map((num) => (
+                        <li key={num}>
+                          <div className="font-semibold text-blue-600 dark:text-cyan-400 text-lg">
+                            {surfboardDisplayLabel(num)}
+                          </div>
+                          {surfboardByNumber.get(num.trim().toLowerCase()) == null && (
+                            <div className="text-xs text-amber-600 dark:text-amber-400/90 mt-0.5">
+                              Nº en contrato: {num.trim()} (no está en el inventario actual)
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
@@ -467,7 +494,7 @@ export default function AdminDashboard() {
                 <RentalBoardChangeHistoryList
                   agreementId={selectedAgreement.id}
                   boards={surfboards}
-                  refreshKey={selectedAgreement.surfboard_number ?? ''}
+                  refreshKey={selectedDetailBoards.join('|')}
                   showEmptyHint
                 />
                 <div className="grid md:grid-cols-2 gap-6">
@@ -515,7 +542,7 @@ export default function AdminDashboard() {
                           onClick={() => void handleContractPaidChange(true)}
                           className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                         >
-                          {contractPaidUpdating ? 'Guardando…' : 'Marcar como pagado'}
+                          {contractPaidUpdating ? 'Guardando…' : 'Registrar pago'}
                         </button>
                       )}
                       {selectedAgreement.contract_paid === true && (

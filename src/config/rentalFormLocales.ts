@@ -1,0 +1,271 @@
+/** Idioma del formulario público de renta (solo este formulario; el resto de la app no usa esto). */
+export type RentalFormLang = 'en' | 'es';
+
+export type RentalFormValidationMessages = {
+  storePriceMissing: string;
+  storeNameMissing: string;
+  storePriceInvalid: string;
+};
+
+export type RentalFormErrorMessages = {
+  signRequired: string;
+  termsRequired: string;
+  rentalOptionRequired: string;
+  paymentRequired: string;
+  inventoryLoading: string;
+  noBoardsInInventory: string;
+  addAtLeastOneBoard: string;
+  completeOrRemoveBoardRows: string;
+  duplicateBoard: string;
+  invalidBoard: string;
+  submitFailed: string;
+};
+
+export type RentalFormStrings = {
+  langSwitchToEs: string;
+  langSwitchToEn: string;
+  successTitle: string;
+  successBody: string;
+  successAnother: string;
+  headerSubtitle: string;
+  fullName: string;
+  namePlaceholder: string;
+  email: string;
+  emailPlaceholder: string;
+  phone: string;
+  address: string;
+  addressPlaceholder: string;
+  pickup: string;
+  returnLabel: string;
+  boardsSection: string;
+  addBoard: string;
+  loadingBoards: string;
+  noBoardsWarning: string;
+  boardRowLabel: (n: number) => string;
+  boardsHelp: string;
+  removeBoardAria: string;
+  surfboardCombobox: {
+    placeholder: string;
+    ariaOpenList: string;
+    ariaCloseList: string;
+    noMatches: string;
+  };
+  boardCheckedBy: string;
+  selectStaff: string;
+  rentalOptionsSection: string;
+  rentalOptionLabels: Record<string, string>;
+  storeItemsSection: string;
+  addProduct: string;
+  storeHelp: string;
+  storeTableProduct: string;
+  storeTablePrice: string;
+  removeRowAria: string;
+  noStoreItems: string;
+  pricePerBoard: string;
+  rentLine: (count: number, unit: string, subtotal: string) => string;
+  storeTotal: string;
+  contractTotal: string;
+  paymentMethod: string;
+  payCash: string;
+  payCard: string;
+  termsTitle: string;
+  termsParagraphs: string[];
+  signatureTitle: string;
+  signatureHelp: string;
+  agreeCheckbox: string;
+  submit: string;
+  submitting: string;
+  validation: RentalFormValidationMessages;
+  errors: RentalFormErrorMessages;
+};
+
+const rentalOptionLabelsEn: Record<string, string> = {
+  surfboard_sesh: 'Surfboard Session (3hrs)',
+  regular_full_day: 'Regular Surfboard Full Day',
+  premium_full_day: 'Premium Surfboard Full Day',
+  bodyboard_extra: 'Bodyboard Extra Day',
+  regular_week: 'Regular Surfboard Week',
+  premium_week: 'Premium Surfboard Week',
+};
+
+const rentalOptionLabelsEs: Record<string, string> = {
+  surfboard_sesh: 'Sesión de surf (3 h)',
+  regular_full_day: 'Tabla regular — día completo',
+  premium_full_day: 'Tabla premium — día completo',
+  bodyboard_extra: 'Bodyboard — día extra',
+  regular_week: 'Tabla regular — semana',
+  premium_week: 'Tabla premium — semana',
+};
+
+export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
+  en: {
+    langSwitchToEs: 'Español',
+    langSwitchToEn: 'English',
+    successTitle: 'Form submitted!',
+    successBody: 'Thank you for completing the rental agreement. We will get in touch with you soon.',
+    successAnother: 'Submit another',
+    headerSubtitle: 'Surfboard Rental Agreement',
+    fullName: 'Full name *',
+    namePlaceholder: 'Your name',
+    email: 'Email *',
+    emailPlaceholder: 'you@email.com',
+    phone: 'Phone *',
+    address: 'Address',
+    addressPlaceholder: 'Your address',
+    pickup: 'Pickup',
+    returnLabel: 'Return',
+    boardsSection: 'Surfboards *',
+    addBoard: 'Add board',
+    loadingBoards: 'Loading board inventory…',
+    noBoardsWarning:
+      'No boards in inventory. Staff must register boards in the admin panel before contracts can be submitted.',
+    boardRowLabel: (n) => `Board ${n}`,
+    boardsHelp:
+      'One contract can include several boards (e.g. family or group). Each row must be a different board in Available status. Search by brand or number.',
+    removeBoardAria: 'Remove board',
+    surfboardCombobox: {
+      placeholder: 'Search by brand or number…',
+      ariaOpenList: 'Open list',
+      ariaCloseList: 'Close list',
+      noMatches: 'No matches in inventory.',
+    },
+    boardCheckedBy: 'Board checked by',
+    selectStaff: 'Select…',
+    rentalOptionsSection: 'Rental options *',
+    rentalOptionLabels: rentalOptionLabelsEn,
+    storeItemsSection: 'Store items',
+    addProduct: 'Add product',
+    storeHelp:
+      'Optional: shop products. Open the list with the arrow or type to filter; when you pick a saved product, the price fills in automatically. You can also enter a new name and price; when you submit, they are saved to the catalog.',
+    storeTableProduct: 'Product',
+    storeTablePrice: 'Price (USD)',
+    removeRowAria: 'Remove line',
+    noStoreItems: 'No store items added.',
+    pricePerBoard: 'Price per board:',
+    rentLine: (count, unit, subtotal) =>
+      `Rental (${count} ${count === 1 ? 'board' : 'boards'}): $${unit} × ${count} = $${subtotal}`,
+    storeTotal: 'Store:',
+    contractTotal: 'Contract total:',
+    paymentMethod: 'Payment method *',
+    payCash: 'Cash',
+    payCard: 'Card',
+    termsTitle: 'Terms and conditions',
+    termsParagraphs: [
+      'Payment must be made in full when signing this agreement.',
+      '• There are no refunds for early returns.',
+      '• All boards will be examined before departure and upon return.',
+      'WAIVER AND ASSUMPTION OF RISK',
+      'The undersigned voluntarily makes and grants this Waiver and Assumption of Risk in favor of Agua Tibia Surf School SA. I hereby waive and release from any and all claims for negligence or strict liability arising from my use or misuse of products provided while testing, including surfboards, surfboard fins and any other product offered by Agua Tibia Surf School SA.',
+      'I understand, acknowledge and fully accept that surfing is a dangerous activity with inherent risk and hazards such as the possibility of injury to myself and others, damage to my boards, or the boards of others or even death, and that I nevertheless accept.',
+    ],
+    signatureTitle: 'Digital signature *',
+    signatureHelp: 'Draw your signature in the box using your mouse or finger on touch devices.',
+    agreeCheckbox:
+      'I accept that I am a competent adult assuming the risk of my own free will, without being under any compulsion or coercion. I have checked my board for damage and confirm before signing. *',
+    submit: 'Submit rental agreement',
+    submitting: 'Submitting…',
+    validation: {
+      storePriceMissing: 'Enter a price for each store product or remove the empty row.',
+      storeNameMissing: 'Enter a product name or clear the price on that row.',
+      storePriceInvalid: 'Store prices must be valid numbers (e.g. 10 or 10.50).',
+    },
+    errors: {
+      signRequired: 'Please sign the agreement before submitting',
+      termsRequired: 'You must accept the terms and conditions',
+      rentalOptionRequired: 'Select a rental option',
+      paymentRequired: 'Select a payment method',
+      inventoryLoading: 'Please wait for the board inventory to finish loading.',
+      noBoardsInInventory: 'No boards available in inventory. Please contact the school.',
+      addAtLeastOneBoard: 'Add at least one board from inventory.',
+      completeOrRemoveBoardRows: 'Complete all board rows or remove empty rows.',
+      duplicateBoard: 'You cannot assign the same board twice in one contract.',
+      invalidBoard: 'One of the selected boards is not valid in inventory.',
+      submitFailed: 'Failed to submit the form',
+    },
+  },
+  es: {
+    langSwitchToEs: 'Español',
+    langSwitchToEn: 'English',
+    successTitle: '¡Formulario enviado!',
+    successBody: 'Gracias por completar el acuerdo de renta. Nos pondremos en contacto contigo pronto.',
+    successAnother: 'Enviar otro formulario',
+    headerSubtitle: 'Acuerdo de alquiler de tabla',
+    fullName: 'Nombre completo *',
+    namePlaceholder: 'Tu nombre',
+    email: 'Correo *',
+    emailPlaceholder: 'tu@email.com',
+    phone: 'Teléfono *',
+    address: 'Dirección',
+    addressPlaceholder: 'Tu dirección',
+    pickup: 'Retiro',
+    returnLabel: 'Devolución',
+    boardsSection: 'Tablas de surf *',
+    addBoard: 'Añadir tabla',
+    loadingBoards: 'Cargando inventario de tablas…',
+    noBoardsWarning:
+      'No hay tablas en inventario. El personal debe registrar tablas en el panel administrativo antes de poder enviar contratos.',
+    boardRowLabel: (n) => `Tabla ${n}`,
+    boardsHelp:
+      'Un mismo contrato puede incluir varias tablas (por ejemplo familia o grupo). Cada fila debe ser una tabla distinta en estado Disponible. Busca por marca o número.',
+    removeBoardAria: 'Quitar tabla',
+    surfboardCombobox: {
+      placeholder: 'Busca por marca o número…',
+      ariaOpenList: 'Abrir lista',
+      ariaCloseList: 'Cerrar lista',
+      noMatches: 'No hay coincidencias en el inventario.',
+    },
+    boardCheckedBy: 'Tabla revisada por',
+    selectStaff: 'Seleccionar…',
+    rentalOptionsSection: 'Opciones de renta *',
+    rentalOptionLabels: rentalOptionLabelsEs,
+    storeItemsSection: 'Productos de tienda',
+    addProduct: 'Añadir producto',
+    storeHelp:
+      'Opcional: productos de tienda. Abre la lista con la flecha o escribe para filtrar; al elegir un producto guardado, el precio se rellena solo. También puedes escribir un nombre y precio nuevos; al enviar el contrato se guardan en el catálogo.',
+    storeTableProduct: 'Producto',
+    storeTablePrice: 'Precio (USD)',
+    removeRowAria: 'Quitar línea',
+    noStoreItems: 'Sin productos de tienda.',
+    pricePerBoard: 'Precio por tabla:',
+    rentLine: (count, unit, subtotal) =>
+      `Renta (${count} ${count === 1 ? 'tabla' : 'tablas'}): $${unit} × ${count} = $${subtotal}`,
+    storeTotal: 'Tienda:',
+    contractTotal: 'Total contrato:',
+    paymentMethod: 'Método de pago *',
+    payCash: 'Efectivo',
+    payCard: 'Tarjeta',
+    termsTitle: 'Términos y condiciones',
+    termsParagraphs: [
+      'El pago debe realizarse por completo al firmar este acuerdo.',
+      '• No hay reembolsos por devoluciones anticipadas.',
+      '• Todas las tablas serán examinadas antes de la salida y al regreso.',
+      'RENUNCIA Y ASUNCIÓN DE RIESGO',
+      'El firmante otorga voluntariamente esta renuncia y asunción de riesgo a favor de Agua Tibia Surf School SA. Por la presente renuncio y libero toda reclamación por negligencia o responsabilidad estricta derivada del uso o mal uso de los productos proporcionados, incluidas tablas de surf, quillas y cualquier otro producto ofrecido por Agua Tibia Surf School SA.',
+      'Entiendo, reconozco y acepto plenamente que el surf es una actividad peligrosa con riesgos inherentes, como posibles lesiones a mí u otras personas, daños a tablas propias o ajenas o incluso la muerte, y no obstante lo acepto.',
+    ],
+    signatureTitle: 'Firma digital *',
+    signatureHelp: 'Dibuja tu firma en el recuadro con el ratón o el dedo en pantallas táctiles.',
+    agreeCheckbox:
+      'Acepto que soy un adulto competente que asume el riesgo por voluntad propia, sin coacción. He revisado mi tabla en busca de daños y confirmo antes de firmar. *',
+    submit: 'Enviar acuerdo de renta',
+    submitting: 'Enviando…',
+    validation: {
+      storePriceMissing: 'Indica el precio de cada producto de tienda o elimina la fila vacía.',
+      storeNameMissing: 'Indica el nombre del producto o borra el precio en esa fila.',
+      storePriceInvalid: 'Revisa que los precios de tienda sean números válidos (ej. 10 o 10.50).',
+    },
+    errors: {
+      signRequired: 'Debes firmar el acuerdo antes de enviar',
+      termsRequired: 'Debes aceptar los términos y condiciones',
+      rentalOptionRequired: 'Selecciona una opción de renta',
+      paymentRequired: 'Selecciona un método de pago',
+      inventoryLoading: 'Espera a que cargue el inventario de tablas.',
+      noBoardsInInventory: 'No hay tablas disponibles en inventario. Contacta a la escuela.',
+      addAtLeastOneBoard: 'Añade al menos una tabla del inventario.',
+      completeOrRemoveBoardRows: 'Completa todas las tablas o elimina las filas vacías.',
+      duplicateBoard: 'No puedes asignar la misma tabla dos veces en un mismo contrato.',
+      invalidBoard: 'Una de las tablas seleccionadas no es válida en el inventario.',
+      submitFailed: 'Error al enviar el formulario',
+    },
+  },
+};

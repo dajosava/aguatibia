@@ -6,6 +6,8 @@ import SignatureCanvas from './SignatureCanvas';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
+import type { RentalFormLang, RentalFormValidationMessages } from '../config/rentalFormLocales';
+import { RENTAL_FORM_STRINGS } from '../config/rentalFormLocales';
 import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
 import { fetchStoreProducts } from '../services/storeCatalogService';
 import { fetchSurfboardInventoryForRental } from '../services/surfboardInventoryService';
@@ -28,7 +30,8 @@ function parseMoneyInput(raw: string): number {
 }
 
 function collectStoreLines(
-  rows: StoreItemLine[]
+  rows: StoreItemLine[],
+  v: RentalFormValidationMessages
 ): { ok: true; lines: { product_name: string; unit_price: number }[] } | { ok: false; message: string } {
   const lines: { product_name: string; unit_price: number }[] = [];
   for (const r of rows) {
@@ -36,14 +39,14 @@ function collectStoreLines(
     const rawPrice = r.price.trim();
     if (!name && !rawPrice) continue;
     if (name && !rawPrice) {
-      return { ok: false, message: 'Indica el precio de cada producto de tienda o elimina la fila vacía.' };
+      return { ok: false, message: v.storePriceMissing };
     }
     if (!name && rawPrice) {
-      return { ok: false, message: 'Indica el nombre del producto o borra el precio en esa fila.' };
+      return { ok: false, message: v.storeNameMissing };
     }
     const p = parseMoneyInput(rawPrice);
     if (Number.isNaN(p)) {
-      return { ok: false, message: 'Revisa que los precios de tienda sean números válidos (ej. 10 o 10.50).' };
+      return { ok: false, message: v.storePriceInvalid };
     }
     lines.push({ product_name: name, unit_price: p });
   }
@@ -89,6 +92,8 @@ export default function RentalForm() {
   const [surfboards, setSurfboards] = useState<SurfboardInventoryRow[]>([]);
   const [surfboardsLoading, setSurfboardsLoading] = useState(true);
   const [boardLines, setBoardLines] = useState(() => [newBoardLine()]);
+  const [lang, setLang] = useState<RentalFormLang>('en');
+  const t = RENTAL_FORM_STRINGS[lang];
 
   useEffect(() => {
     fetchStoreProducts()
@@ -170,66 +175,68 @@ export default function RentalForm() {
     setError(null);
     setIsSubmitting(true);
 
+    const err = t.errors;
+
     if (!formData.signature_data) {
-      setError('Please sign the agreement before submitting');
+      setError(err.signRequired);
       setIsSubmitting(false);
       return;
     }
 
     if (!formData.agreed_to_terms) {
-      setError('You must accept the terms and conditions');
+      setError(err.termsRequired);
       setIsSubmitting(false);
       return;
     }
 
     if (!formData.rental_type || !formData.rental_duration) {
-      setError('Selecciona una opción de renta');
+      setError(err.rentalOptionRequired);
       setIsSubmitting(false);
       return;
     }
 
     if (!formData.payment_method) {
-      setError('Selecciona un método de pago');
+      setError(err.paymentRequired);
       setIsSubmitting(false);
       return;
     }
 
     if (surfboardsLoading) {
-      setError('Espera a que cargue el inventario de tablas.');
+      setError(err.inventoryLoading);
       setIsSubmitting(false);
       return;
     }
     if (surfboards.length === 0) {
-      setError('No hay tablas disponibles en inventario. Contacta a la escuela.');
+      setError(err.noBoardsInInventory);
       setIsSubmitting(false);
       return;
     }
     const nums = boardLines.map((l) => l.boardNumber.trim()).filter((n) => n.length > 0);
     if (nums.length === 0) {
-      setError('Añade al menos una tabla del inventario.');
+      setError(err.addAtLeastOneBoard);
       setIsSubmitting(false);
       return;
     }
     if (nums.length !== boardLines.length) {
-      setError('Completa todas las tablas o elimina las filas vacías.');
+      setError(err.completeOrRemoveBoardRows);
       setIsSubmitting(false);
       return;
     }
     const unique = new Set(nums);
     if (unique.size !== nums.length) {
-      setError('No puedes asignar la misma tabla dos veces en un mismo contrato.');
+      setError(err.duplicateBoard);
       setIsSubmitting(false);
       return;
     }
     for (const n of nums) {
       if (!surfboards.some((b) => b.board_number === n)) {
-        setError('Una de las tablas seleccionadas no es válida en el inventario.');
+        setError(err.invalidBoard);
         setIsSubmitting(false);
         return;
       }
     }
 
-    const storeResult = collectStoreLines(storeItems);
+    const storeResult = collectStoreLines(storeItems, t.validation);
     if (!storeResult.ok) {
       setError(storeResult.message);
       setIsSubmitting(false);
@@ -289,7 +296,7 @@ export default function RentalForm() {
 
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al enviar el formulario');
+      setError(err instanceof Error ? err.message : t.errors.submitFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -300,16 +307,14 @@ export default function RentalForm() {
       <div className="max-w-4xl mx-auto p-8">
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-12 text-center border border-transparent dark:border-slate-700">
           <CheckCircle2 className="w-20 h-20 text-green-500 dark:text-emerald-400 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">¡Formulario Enviado!</h2>
-          <p className="text-gray-600 dark:text-slate-400 text-lg">
-            Gracias por completar el acuerdo de renta. Nos pondremos en contacto contigo pronto.
-          </p>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">{t.successTitle}</h2>
+          <p className="text-gray-600 dark:text-slate-400 text-lg">{t.successBody}</p>
           <button
             type="button"
             onClick={() => setIsSuccess(false)}
             className="mt-8 px-8 py-3 bg-blue-600 dark:bg-cyan-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-cyan-600 transition font-semibold"
           >
-            Enviar otro formulario
+            {t.successAnother}
           </button>
         </div>
       </div>
@@ -320,18 +325,29 @@ export default function RentalForm() {
     <div className="max-w-4xl mx-auto p-4 md:p-8">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-transparent dark:border-slate-700">
         <div className="bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 p-8 text-white border-b border-blue-900/30">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Waves className="w-12 h-12" />
-            <h1 className="text-4xl font-bold">Agua Tibia</h1>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+            <div className="flex items-center justify-center gap-3 flex-1">
+              <Waves className="w-12 h-12 shrink-0" />
+              <h1 className="text-4xl font-bold">Agua Tibia</h1>
+            </div>
+            <div className="flex justify-center sm:justify-end sm:pt-1">
+              <button
+                type="button"
+                onClick={() => setLang((l) => (l === 'en' ? 'es' : 'en'))}
+                className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-sm font-semibold transition"
+              >
+                {lang === 'en' ? t.langSwitchToEs : t.langSwitchToEn}
+              </button>
+            </div>
           </div>
-          <p className="text-center text-xl opacity-95">Surfboard Rental Agreement</p>
+          <p className="text-center text-xl opacity-95">{t.headerSubtitle}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="form-label" htmlFor="rental-name">
-                Full Name *
+                {t.fullName}
               </label>
               <input
                 id="rental-name"
@@ -341,13 +357,13 @@ export default function RentalForm() {
                 onChange={handleInputChange}
                 required
                 className="form-input"
-                placeholder="Your name"
+                placeholder={t.namePlaceholder}
               />
             </div>
 
             <div>
               <label className="form-label" htmlFor="rental-email">
-                Email *
+                {t.email}
               </label>
               <input
                 id="rental-email"
@@ -357,13 +373,13 @@ export default function RentalForm() {
                 onChange={handleInputChange}
                 required
                 className="form-input"
-                placeholder="tu@email.com"
+                placeholder={t.emailPlaceholder}
               />
             </div>
 
             <div>
               <label className="form-label">
-                Phone *
+                {t.phone}
               </label>
               <PhoneInput
                 international
@@ -377,7 +393,7 @@ export default function RentalForm() {
 
             <div>
               <label className="form-label" htmlFor="rental-address">
-                Address
+                {t.address}
               </label>
               <input
                 id="rental-address"
@@ -386,13 +402,13 @@ export default function RentalForm() {
                 value={formData.address}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="Your address"
+                placeholder={t.addressPlaceholder}
               />
             </div>
 
             <div>
               <label className="form-label" htmlFor="rental-pickup">
-                Pickup
+                {t.pickup}
               </label>
               <input
                 id="rental-pickup"
@@ -406,7 +422,7 @@ export default function RentalForm() {
 
             <div>
               <label className="form-label" htmlFor="rental-return">
-                Return
+                {t.returnLabel}
               </label>
               <input
                 id="rental-return"
@@ -420,7 +436,7 @@ export default function RentalForm() {
 
             <div className="md:col-span-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
-                <label className="form-label mb-0">Tablas de surf *</label>
+                <label className="form-label mb-0">{t.boardsSection}</label>
                 <button
                   type="button"
                   onClick={() => setBoardLines((prev) => [...prev, newBoardLine()])}
@@ -428,15 +444,14 @@ export default function RentalForm() {
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 text-sm font-medium disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
-                  Añadir tabla
+                  {t.addBoard}
                 </button>
               </div>
               {surfboardsLoading ? (
-                <p className="text-sm text-gray-600 dark:text-slate-400 py-2">Cargando inventario de tablas…</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400 py-2">{t.loadingBoards}</p>
               ) : surfboards.length === 0 ? (
                 <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
-                  No hay tablas en inventario. El personal debe registrar tablas en el panel administrativo antes de
-                  poder enviar contratos.
+                  {t.noBoardsWarning}
                 </p>
               ) : (
                 <>
@@ -448,7 +463,7 @@ export default function RentalForm() {
                       >
                         <div className="flex-1 min-w-0">
                           <span className="text-xs font-medium text-gray-500 dark:text-slate-500 block mb-1">
-                            Tabla {index + 1}
+                            {t.boardRowLabel(index + 1)}
                           </span>
                           <SurfboardCombobox
                             id={`rental-board-${row.id}`}
@@ -460,6 +475,7 @@ export default function RentalForm() {
                               )
                             }
                             disabled={surfboardsLoading}
+                            labels={t.surfboardCombobox}
                           />
                         </div>
                         {boardLines.length > 1 && (
@@ -467,7 +483,7 @@ export default function RentalForm() {
                             type="button"
                             onClick={() => setBoardLines((prev) => prev.filter((r) => r.id !== row.id))}
                             className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition shrink-0 self-end sm:self-center"
-                            aria-label="Quitar tabla"
+                            aria-label={t.removeBoardAria}
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -475,17 +491,14 @@ export default function RentalForm() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
-                    Un mismo contrato puede incluir varias tablas (por ejemplo familia o grupo). Cada fila debe ser una
-                    tabla distinta en estado Disponible. Busca por marca o número.
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">{t.boardsHelp}</p>
                 </>
               )}
             </div>
 
             <div>
               <label className="form-label" htmlFor="rental-checked-by">
-                Board Checked By
+                {t.boardCheckedBy}
               </label>
               <select
                 id="rental-checked-by"
@@ -494,7 +507,7 @@ export default function RentalForm() {
                 onChange={handleInputChange}
                 className="form-input"
               >
-                <option value="">Select...</option>
+                <option value="">{t.selectStaff}</option>
                 <option value="Alexander">Alexander</option>
                 <option value="Martin">Martin</option>
               </select>
@@ -502,7 +515,7 @@ export default function RentalForm() {
           </div>
 
           <div>
-            <p className="form-label mb-4">Rental Options *</p>
+            <p className="form-label mb-4">{t.rentalOptionsSection}</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {RENTAL_OPTIONS.map((option) => (
                 <button
@@ -515,7 +528,9 @@ export default function RentalForm() {
                       : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 dark:border-slate-600 dark:hover:border-cyan-600 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="font-semibold text-gray-800 dark:text-slate-100">{option.label}</div>
+                  <div className="font-semibold text-gray-800 dark:text-slate-100">
+                    {t.rentalOptionLabels[option.id] ?? option.label}
+                  </div>
                   <div className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-2">${option.price}</div>
                 </button>
               ))}
@@ -524,21 +539,17 @@ export default function RentalForm() {
 
           <div className="border-t border-gray-200 dark:border-slate-600 pt-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <p className="form-label mb-0">Store Items</p>
+              <p className="form-label mb-0">{t.storeItemsSection}</p>
               <button
                 type="button"
                 onClick={() => setStoreItems((prev) => [...prev, newStoreLine()])}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 hover:bg-gray-50 dark:hover:bg-slate-800/50 font-medium text-sm transition"
               >
                 <Plus className="w-4 h-4" />
-                Add product
+                {t.addProduct}
               </button>
             </div>
-            <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
-              Opcional: productos de tienda. Abre la lista con la flecha o escribe para filtrar; al elegir un producto
-              guardado, el precio se rellena solo. También puedes escribir un nombre y precio nuevos; al enviar el
-              contrato se guardan en el catálogo.
-            </p>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">{t.storeHelp}</p>
 
             {storeItems.length > 0 ? (
               <div className="overflow-x-auto rounded-lg border-2 border-gray-200 dark:border-slate-600">
@@ -546,10 +557,12 @@ export default function RentalForm() {
                   <thead className="bg-gray-50 dark:bg-slate-800/80">
                     <tr>
                       <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 min-w-[28rem] w-[28rem]">
-                        Product
+                        {t.storeTableProduct}
                       </th>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-36">Price (USD)</th>
-                      <th className="w-12 px-1" aria-label="Remove row" />
+                      <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-36">
+                        {t.storeTablePrice}
+                      </th>
+                      <th className="w-12 px-1" aria-label={t.removeRowAria} />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
@@ -585,7 +598,7 @@ export default function RentalForm() {
                             type="button"
                             onClick={() => setStoreItems((prev) => prev.filter((r) => r.id !== row.id))}
                             className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                            aria-label="Remove line"
+                            aria-label={t.removeRowAria}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -596,36 +609,37 @@ export default function RentalForm() {
                 </table>
               </div>
             ) : (
-              <p className="text-sm text-gray-500 dark:text-slate-500 italic">No store items added.</p>
+              <p className="text-sm text-gray-500 dark:text-slate-500 italic">{t.noStoreItems}</p>
             )}
 
             <div className="mt-4 flex flex-wrap gap-4 justify-end items-baseline text-sm">
               <span className="text-gray-600 dark:text-slate-400">
-                Precio por tabla:{' '}
+                {t.pricePerBoard}{' '}
                 <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
               </span>
               {selectedBoardCount > 0 && (
                 <span className="text-gray-600 dark:text-slate-400">
-                  Renta ({selectedBoardCount} {selectedBoardCount === 1 ? 'tabla' : 'tablas'}):{' '}
-                  <strong className="text-gray-900 dark:text-slate-100">
-                    ${getRentalBasePrice().toFixed(2)} × {selectedBoardCount} = ${getRentalSubtotal().toFixed(2)}
-                  </strong>
+                  {t.rentLine(
+                    selectedBoardCount,
+                    getRentalBasePrice().toFixed(2),
+                    getRentalSubtotal().toFixed(2)
+                  )}
                 </span>
               )}
               {getStoreItemsSubtotal() > 0 && (
                 <span className="text-gray-600 dark:text-slate-400">
-                  Tienda:{' '}
+                  {t.storeTotal}{' '}
                   <strong className="text-gray-900 dark:text-slate-100">${getStoreItemsSubtotal().toFixed(2)}</strong>
                 </span>
               )}
               <span className="text-base font-bold text-blue-600 dark:text-cyan-400">
-                Total contrato: ${getContractTotal().toFixed(2)}
+                {t.contractTotal} ${getContractTotal().toFixed(2)}
               </span>
             </div>
           </div>
 
           <div>
-            <p className="form-label">Payment Method *</p>
+            <p className="form-label">{t.paymentMethod}</p>
             <div className="flex gap-4">
               <button
                 type="button"
@@ -636,7 +650,7 @@ export default function RentalForm() {
                     : 'border-gray-300 hover:border-blue-300 dark:border-slate-600 dark:text-slate-200 dark:hover:border-cyan-600'
                 }`}
               >
-                CASH
+                {t.payCash.toUpperCase()}
               </button>
               <button
                 type="button"
@@ -647,41 +661,38 @@ export default function RentalForm() {
                     : 'border-gray-300 hover:border-blue-300 dark:border-slate-600 dark:text-slate-200 dark:hover:border-cyan-600'
                 }`}
               >
-                CARD
+                {t.payCard.toUpperCase()}
               </button>
             </div>
           </div>
 
           <div className="bg-gray-50 dark:bg-slate-800/60 p-6 rounded-lg border-2 border-gray-200 dark:border-slate-600">
-            <h3 className="font-bold text-lg mb-3 text-gray-800 dark:text-slate-100">Terms and Conditions</h3>
+            <h3 className="font-bold text-lg mb-3 text-gray-800 dark:text-slate-100">{t.termsTitle}</h3>
             <div className="text-sm text-gray-700 dark:text-slate-300 space-y-2 max-h-48 overflow-y-auto">
-              <p className="font-semibold">Payment must be made in full when signing this agreement.</p>
-              <p>• There are no refunds for early returns.</p>
-              <p>• All boards will be examined before departure and upon return.</p>
-              <p className="font-semibold mt-3">WAIVER AND ASSUMPTION OF RISK</p>
-              <p>
-                The undersigned voluntarily makes and grants this Waiver and Assumption of Risk in favor of Agua Tibia
-                Surf School SA. I hereby waive and release from any and all claims for negligence or strict liability
-                arising from my use or misuse of products provided while testing, including surfboards, surfboard fins
-                and any other product offered by Agua Tibia Surf School SA.
-              </p>
-              <p>
-                I understand, acknowledge and fully accept that surfing is a dangerous activity with inherent risk and
-                hazards such as the possibility of injury to myself and others, damage to my boards, or the boards of
-                others or even death, and that I nevertheless accept.
-              </p>
+              {t.termsParagraphs.map((para, i) => (
+                <p
+                  key={i}
+                  className={
+                    i === 0 || i === 3
+                      ? i === 3
+                        ? 'font-semibold mt-3'
+                        : 'font-semibold'
+                      : ''
+                  }
+                >
+                  {para}
+                </p>
+              ))}
             </div>
           </div>
 
           <div>
-            <p className="form-label mb-3">Digital Signature *</p>
+            <p className="form-label mb-3">{t.signatureTitle}</p>
             <SignatureCanvas
               onSignatureChange={(sig) => setFormData(prev => ({ ...prev, signature_data: sig }))}
               value={formData.signature_data}
             />
-            <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
-              Draw your signature in the box using your mouse or finger on touch devices
-            </p>
+            <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">{t.signatureHelp}</p>
           </div>
 
           <div className="flex items-start gap-3">
@@ -693,10 +704,7 @@ export default function RentalForm() {
               required
               className="w-5 h-5 mt-1 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-200 dark:border-slate-500 dark:bg-slate-800 dark:focus:ring-cyan-900"
             />
-            <label className="text-sm text-gray-700 dark:text-slate-300">
-              I accept that I am a competent adult assuming the risk of my own free will, without being under
-              any compulsion or coercion. I have checked my board for damage and confirm before signing. *
-            </label>
+            <label className="text-sm text-gray-700 dark:text-slate-300">{t.agreeCheckbox}</label>
           </div>
 
           {error && (
@@ -712,7 +720,7 @@ export default function RentalForm() {
             }
             className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-cyan-800 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-cyan-700 dark:hover:from-blue-900 dark:hover:to-cyan-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Rental Agreement'}
+            {isSubmitting ? t.submitting : t.submit}
           </button>
         </form>
       </div>

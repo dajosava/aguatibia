@@ -38,12 +38,28 @@ function getScrollTargets(el: HTMLElement | null): (HTMLElement | Window)[] {
   return out;
 }
 
+export type SurfboardComboboxLabels = {
+  placeholder: string;
+  ariaOpenList: string;
+  ariaCloseList: string;
+  noMatches: string;
+};
+
+const defaultComboboxLabels: SurfboardComboboxLabels = {
+  placeholder: 'Busca por marca o número…',
+  ariaOpenList: 'Abrir lista',
+  ariaCloseList: 'Cerrar lista',
+  noMatches: 'No hay coincidencias en el inventario.',
+};
+
 export type SurfboardComboboxProps = {
   boards: SurfboardInventoryRow[];
   value: string;
   onChange: (boardNumber: string) => void;
   id?: string;
   disabled?: boolean;
+  /** Textos (p. ej. formulario público en inglés); por defecto español (panel admin). */
+  labels?: Partial<SurfboardComboboxLabels>;
 };
 
 export default function SurfboardCombobox({
@@ -52,7 +68,9 @@ export default function SurfboardCombobox({
   onChange,
   id,
   disabled,
+  labels: labelsProp,
 }: SurfboardComboboxProps) {
+  const labels: SurfboardComboboxLabels = { ...defaultComboboxLabels, ...labelsProp };
   const [open, setOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -228,13 +246,13 @@ export default function SurfboardCombobox({
           aria-controls={showPanel ? listId : undefined}
           aria-autocomplete="list"
           className="form-input min-w-0 flex-1 py-2 text-sm"
-          placeholder="Busca por marca o número…"
+          placeholder={labels.placeholder}
         />
         {boards.length > 0 && !disabled && (
           <button
             type="button"
             className="shrink-0 inline-flex items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50 px-2 text-gray-700 transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            aria-label={open ? 'Cerrar lista' : 'Abrir lista'}
+            aria-label={open ? labels.ariaCloseList : labels.ariaOpenList}
             aria-expanded={showPanel}
             aria-controls={showPanel ? listId : undefined}
             onMouseDown={(e) => {
@@ -287,7 +305,7 @@ export default function SurfboardCombobox({
                 ))
               ) : (
                 <li className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400" role="presentation">
-                  No hay coincidencias en el inventario.
+                  {labels.noMatches}
                 </li>
               )}
             </ul>

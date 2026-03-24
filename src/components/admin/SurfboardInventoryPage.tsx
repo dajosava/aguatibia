@@ -165,8 +165,9 @@ export default function SurfboardInventoryPage() {
         </h1>
         <p className="text-gray-600 dark:text-slate-400 mb-8">
           Marca y número son los que verá el cliente al elegir tabla en el formulario de renta (solo tablas{' '}
-          <strong className="text-gray-800 dark:text-slate-200">Disponible</strong>). La descripción es solo para uso
-          interno del equipo.
+          <strong className="text-gray-800 dark:text-slate-200">Disponible</strong>). Al enviarse un contrato con esa
+          tabla, el inventario la pasa automáticamente a <strong className="text-gray-800 dark:text-slate-200">Rentada</strong>.
+          La descripción es solo para uso interno del equipo.
         </p>
 
         <form

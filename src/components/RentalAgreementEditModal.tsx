@@ -215,8 +215,10 @@ export default function RentalAgreementEditModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <p className="text-sm text-gray-600 dark:text-slate-400">
             Ajusta fechas, productos de tienda o el estado del pago. Para sustituir la tabla durante la renta usa{' '}
-            <strong className="font-semibold text-gray-800 dark:text-slate-200">Hacer cambio</strong>: el número
-            anterior queda libre y el cambio queda en el historial.
+            <strong className="font-semibold text-gray-800 dark:text-slate-200">Hacer cambio</strong>: en inventario, la
+            tabla anterior pasa a <strong className="font-semibold text-gray-800 dark:text-slate-200">Disponible</strong>{' '}
+            y la nueva a <strong className="font-semibold text-gray-800 dark:text-slate-200">Rentada</strong>; el cambio
+            queda en el historial.
           </p>
 
           {error && (
@@ -283,8 +285,9 @@ export default function RentalAgreementEditModal({
             {showSwapPanel && (
               <div className="pt-3 border-t border-blue-200/80 dark:border-slate-600 space-y-3">
                 <p className="text-sm text-gray-700 dark:text-slate-300">
-                  Busca la nueva tabla para este cliente. La anterior ({currentBoardNum || '—'}) quedará disponible para
-                  otra renta.
+                  Busca la nueva tabla (solo en estado Disponible en inventario). Al registrar el cambio, la tabla que
+                  llevaba el cliente ({currentBoardNum || '—'}) pasa a <strong>Disponible</strong> y la nueva a{' '}
+                  <strong>Rentada</strong> en el inventario.
                 </p>
                 <div>
                   <label className="form-label" htmlFor="swap-new-board">

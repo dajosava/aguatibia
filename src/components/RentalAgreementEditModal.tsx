@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, ArrowLeftRight, DoorOpen } from 'lucide-react';
+import { Plus, Trash2, ArrowLeftRight, DoorOpen, Banknote } from 'lucide-react';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import { getRentalPriceForSelection } from '../config/rentalOptions';
 import {
   checkoutCloseRentalAgreement,
   swapRentalSurfboard,
+  updateRentalAgreementContractPaid,
   updateRentalAgreementWithStoreItems,
 } from '../services/rentalAgreementService';
 import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
@@ -85,7 +86,6 @@ export default function RentalAgreementEditModal({
 }: Props) {
   const [pickup, setPickup] = useState('');
   const [returnTime, setReturnTime] = useState('');
-  const [contractPaid, setContractPaid] = useState(false);
   const [boardCheckedBy, setBoardCheckedBy] = useState('');
   const [storeItems, setStoreItems] = useState<StoreItemLine[]>([]);
   const [saving, setSaving] = useState(false);
@@ -95,13 +95,13 @@ export default function RentalAgreementEditModal({
   const [swapNewBoard, setSwapNewBoard] = useState('');
   const [swapping, setSwapping] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [registeringPayment, setRegisteringPayment] = useState(false);
 
   const isClosed = agreement.status === 'cerrado';
 
   useEffect(() => {
     setPickup(isoToDatetimeLocalValue(agreement.pickup));
     setReturnTime(isoToDatetimeLocalValue(agreement.return_time));
-    setContractPaid(agreement.contract_paid === true);
     setBoardCheckedBy(agreement.board_checked_by ?? '');
     const sorted = [...(agreement.rental_agreement_store_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
     setStoreItems(
@@ -133,8 +133,17 @@ export default function RentalAgreementEditModal({
 
   const currentBoardNum = agreement.surfboard_number?.trim() ?? '';
 
+  /** Solo el valor guardado en el acuerdo habilita check-out (evita cerrar con pago pendiente). */
+  const paymentRecordedAsPaid = agreement.contract_paid === true;
+
   const handleCheckoutClose = async () => {
     setError(null);
+    if (!paymentRecordedAsPaid) {
+      setError(
+        'No se puede cerrar el contrato: el pago está pendiente. Usa «Registrar pago» arriba o márcalo en Detalle del acuerdo (panel admin).'
+      );
+      return;
+    }
     if (
       !window.confirm(
         '¿Cerrar este contrato (check-out)? El acuerdo pasará a estado Cerrado y la tabla asignada volverá a Disponible en el inventario.'
@@ -150,6 +159,20 @@ export default function RentalAgreementEditModal({
       setError(err instanceof Error ? err.message : 'No se pudo cerrar el contrato');
     } finally {
       setClosing(false);
+    }
+  };
+
+  const handleRegisterPayment = async () => {
+    setError(null);
+    if (isClosed || paymentRecordedAsPaid) return;
+    setRegisteringPayment(true);
+    try {
+      await updateRentalAgreementContractPaid(agreement.id, true);
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo registrar el pago');
+    } finally {
+      setRegisteringPayment(false);
     }
   };
 
@@ -205,7 +228,6 @@ export default function RentalAgreementEditModal({
         agreement.id,
         {
           rental_price: Math.round((rentalBase + storeResult.lines.reduce((s, l) => s + l.unit_price, 0)) * 100) / 100,
-          contract_paid: contractPaid,
           board_checked_by: boardCheckedBy.trim() || null,
           pickup: pickup.trim() || null,
           return_time: returnTime.trim() || null,
@@ -266,7 +288,8 @@ export default function RentalAgreementEditModal({
         ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <p className="text-sm text-gray-600 dark:text-slate-400">
-            Ajusta fechas, productos de tienda o el estado del pago. Para sustituir la tabla durante la renta usa{' '}
+            Ajusta fechas y productos de tienda. Cuando cobres, usa <strong className="text-gray-800 dark:text-slate-200">Registrar pago</strong>{' '}
+            para poder hacer check-out. Para sustituir la tabla durante la renta usa{' '}
             <strong className="font-semibold text-gray-800 dark:text-slate-200">Hacer cambio</strong>: en inventario, la
             tabla anterior pasa a <strong className="font-semibold text-gray-800 dark:text-slate-200">Disponible</strong>{' '}
             y la nueva a <strong className="font-semibold text-gray-800 dark:text-slate-200">Rentada</strong>; el cambio
@@ -473,15 +496,33 @@ export default function RentalAgreementEditModal({
             <p className="text-sm text-gray-500 dark:text-slate-500 italic">Sin productos de tienda en este acuerdo.</p>
           )}
 
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={contractPaid}
-              onChange={(e) => setContractPaid(e.target.checked)}
-              className="rounded border-gray-300 dark:border-slate-600"
-            />
-            <span className="text-sm text-gray-800 dark:text-slate-200">Contrato pagado</span>
-          </label>
+          <div className="rounded-xl border-2 border-emerald-200/90 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2">
+              <Banknote className="w-4 h-4 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
+              Estado del pago
+            </h3>
+            {paymentRecordedAsPaid ? (
+              <p className="text-sm text-emerald-800 dark:text-emerald-200/90">
+                <strong>Pago registrado.</strong> Puedes usar check-out cuando el cliente devuelva la tabla.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 dark:text-slate-400">
+                  El contrato figura con pago <strong className="text-amber-800 dark:text-amber-200">pendiente</strong>.
+                  Al cobrar, pulsa el botón para registrar el pago y habilitar el cierre.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleRegisterPayment()}
+                  disabled={registeringPayment}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Banknote className="w-4 h-4 shrink-0" aria-hidden />
+                  {registeringPayment ? 'Registrando…' : 'Registrar pago'}
+                </button>
+              </>
+            )}
+          </div>
 
           <div className="rounded-xl border-2 border-amber-200/90 dark:border-amber-900/50 bg-amber-50/60 dark:bg-slate-800/40 p-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-2">
@@ -491,13 +532,20 @@ export default function RentalAgreementEditModal({
             <p className="text-sm text-gray-600 dark:text-slate-400">
               Cierra el contrato cuando el cliente devuelve la tabla. El acuerdo pasa a estado{' '}
               <strong className="text-gray-800 dark:text-slate-200">Cerrado</strong> y la tabla asignada vuelve a{' '}
-              <strong className="text-gray-800 dark:text-slate-200">Disponible</strong> en el inventario.
+              <strong className="text-gray-800 dark:text-slate-200">Disponible</strong> en el inventario. El check-out
+              solo está disponible si el pago está <strong className="text-gray-800 dark:text-slate-200">registrado</strong>{' '}
+              (sección anterior).
             </p>
+            {!paymentRecordedAsPaid && (
+              <p className="text-sm text-amber-800 dark:text-amber-200/90 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                No puedes hacer check-out con el pago pendiente. Pulsa <strong>Registrar pago</strong> cuando hayas cobrado.
+              </p>
+            )}
             <button
               type="button"
               onClick={handleCheckoutClose}
-              disabled={closing}
-              className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-semibold disabled:opacity-50"
+              disabled={closing || !paymentRecordedAsPaid}
+              className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {closing ? 'Cerrando…' : 'Check-out — cerrar contrato'}
             </button>

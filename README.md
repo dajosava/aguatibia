@@ -2,7 +2,7 @@
 
 Aplicación web para gestionar **acuerdos de renta de tablas de surf**: formulario público con firma digital, almacenamiento en **Supabase** y **panel de administración** para el personal de la escuela.
 
-Para el historial detallado de cambios recientes, incluida la descripción ampliada del producto, consulta [`CHANGELOG.md`](./CHANGELOG.md).
+Para el historial detallado de cambios (desde el inicio del proyecto), la descripción del producto y las notas de despliegue, consulta [`netlify/CHANGELOG.md`](./netlify/CHANGELOG.md). En la raíz, [`CHANGELOG.md`](./CHANGELOG.md) enlaza a ese archivo.
 
 ---
 
@@ -60,6 +60,8 @@ project/
 ├── postcss.config.js
 ├── tsconfig*.json
 ├── netlify.toml            # Build y redirects para Netlify
+├── netlify/
+│   └── CHANGELOG.md        # Historial de cambios (producto, migraciones, Netlify)
 ├── docs/
 │   ├── DESPLIEGUE-NETLIFY.md
 │   └── comandos.md           # Git / GitHub: comandos y qué hace cada uno

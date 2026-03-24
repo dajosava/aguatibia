@@ -58,7 +58,6 @@ interface RentalFormData {
   rental_type: string;
   rental_duration: string;
   payment_method: string;
-  contract_paid: boolean;
   agreed_to_terms: boolean;
   signature_data: string | null;
 }
@@ -76,7 +75,6 @@ export default function RentalForm() {
     rental_type: '',
     rental_duration: '',
     payment_method: '',
-    contract_paid: false,
     agreed_to_terms: false,
     signature_data: null,
   });
@@ -220,7 +218,7 @@ export default function RentalForm() {
           rental_duration: formData.rental_duration,
           rental_price: contractTotal,
           payment_method: formData.payment_method,
-          contract_paid: formData.contract_paid,
+          contract_paid: false,
           signature_data: formData.signature_data,
           agreed_to_terms: formData.agreed_to_terms,
           status: 'pending',
@@ -245,7 +243,6 @@ export default function RentalForm() {
         rental_type: '',
         rental_duration: '',
         payment_method: '',
-        contract_paid: false,
         agreed_to_terms: false,
         signature_data: null,
       });
@@ -568,23 +565,6 @@ export default function RentalForm() {
                 CARD
               </button>
             </div>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-lg border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800/40 p-4">
-            <input
-              type="checkbox"
-              name="contract_paid"
-              id="contract-paid"
-              checked={formData.contract_paid}
-              onChange={handleInputChange}
-              className="w-5 h-5 mt-0.5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-200 dark:border-slate-500 dark:bg-slate-800 dark:focus:ring-cyan-900"
-            />
-            <label htmlFor="contract-paid" className="text-sm text-gray-700 dark:text-slate-300 leading-snug">
-              <span className="font-semibold text-gray-900 dark:text-slate-100">Pago del contrato</span>
-              <br />
-              Marca esta casilla si el cliente <strong>ya pagó</strong> el contrato en este momento. Si no la marcas, el
-              pago quedará <strong>pendiente</strong> para que el personal lo registre o cobre después.
-            </label>
           </div>
 
           <div className="bg-gray-50 dark:bg-slate-800/60 p-6 rounded-lg border-2 border-gray-200 dark:border-slate-600">

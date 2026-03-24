@@ -85,11 +85,22 @@ export async function checkoutCloseRentalAgreement(agreementId: string): Promise
 }
 
 /** Actualiza acuerdo y sustituye por completo las líneas de tienda (mismo criterio de precio total que en el alta). La tabla se cambia solo con swapRentalSurfboard. */
+/** Estado de pago del contrato: solo desde panel admin (no desde formulario público ni modal de edición). */
+export async function updateRentalAgreementContractPaid(
+  agreementId: string,
+  contractPaid: boolean
+): Promise<void> {
+  const { error } = await supabase
+    .from('rental_agreements')
+    .update({ contract_paid: contractPaid })
+    .eq('id', agreementId);
+  if (error) throw error;
+}
+
 export async function updateRentalAgreementWithStoreItems(
   agreementId: string,
   agreementPatch: {
     rental_price: number;
-    contract_paid: boolean;
     board_checked_by: string | null;
     pickup: string | null;
     return_time: string | null;
@@ -119,7 +130,6 @@ export async function updateRentalAgreementWithStoreItems(
     .from('rental_agreements')
     .update({
       rental_price: agreementPatch.rental_price,
-      contract_paid: agreementPatch.contract_paid,
       board_checked_by: agreementPatch.board_checked_by,
       pickup: agreementPatch.pickup,
       return_time: agreementPatch.return_time,

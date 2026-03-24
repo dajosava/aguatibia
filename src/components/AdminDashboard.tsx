@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Eye, Pencil, Calendar, DollarSign, User, Mail, Phone } from 'lucide-react';
 import RentalAgreementEditModal from './RentalAgreementEditModal';
 import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
-import { fetchRentalAgreements } from '../services/rentalAgreementService';
+import { fetchRentalAgreements, updateRentalAgreementContractPaid } from '../services/rentalAgreementService';
 import { fetchStoreProducts } from '../services/storeCatalogService';
 import { fetchSurfboardInventory } from '../services/surfboardInventoryService';
 import type { StoreProductRow } from '../types/storeProduct';
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const [selectedAgreement, setSelectedAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
   const [editingAgreement, setEditingAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
   const [productCatalog, setProductCatalog] = useState<StoreProductRow[]>([]);
+  const [contractPaidUpdating, setContractPaidUpdating] = useState(false);
 
   const surfboardByNumber = useMemo(() => {
     const m = new Map<string, SurfboardInventoryRow>();
@@ -80,6 +81,20 @@ export default function AdminDashboard() {
       throw err;
     }
   }, []);
+
+  const handleContractPaidChange = async (paid: boolean) => {
+    if (!selectedAgreement) return;
+    setContractPaidUpdating(true);
+    try {
+      await updateRentalAgreementContractPaid(selectedAgreement.id, paid);
+      await refreshAgreementsData();
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'No se pudo actualizar el estado del pago');
+    } finally {
+      setContractPaidUpdating(false);
+    }
+  };
 
   useEffect(() => {
     loadAgreements();
@@ -489,6 +504,31 @@ export default function AdminDashboard() {
                     >
                       {selectedAgreement.contract_paid === true ? 'Pagado' : 'Pendiente de pago'}
                     </span>
+                    <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">
+                      El cobro del contrato se registra solo aquí (no desde el formulario público).
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedAgreement.contract_paid !== true && (
+                        <button
+                          type="button"
+                          disabled={contractPaidUpdating}
+                          onClick={() => void handleContractPaidChange(true)}
+                          className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                        >
+                          {contractPaidUpdating ? 'Guardando…' : 'Marcar como pagado'}
+                        </button>
+                      )}
+                      {selectedAgreement.contract_paid === true && (
+                        <button
+                          type="button"
+                          disabled={contractPaidUpdating}
+                          onClick={() => void handleContractPaidChange(false)}
+                          className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 disabled:opacity-50"
+                        >
+                          {contractPaidUpdating ? 'Guardando…' : 'Marcar pago pendiente'}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div>

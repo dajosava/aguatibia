@@ -1,12 +1,3 @@
-# Registro de cambios
-
-El **historial completo** del proyecto (descripción del producto, funcionalidades, migraciones y notas de despliegue Netlify) está en **[`netlify/CHANGELOG.md`](./netlify/CHANGELOG.md)**.
-
-Mantén ese archivo al publicar cambios relevantes para el equipo y para releases.
-
----
-
-*Puntero actualizado: 2026-03-21.*
 # Registro de cambios (Agua Tibia Forms)
 
 Documentación de releases y despliegue junto a [`netlify.toml`](../netlify.toml) (build Vite → `dist/`, redirect SPA).

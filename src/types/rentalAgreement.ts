@@ -41,7 +41,7 @@ export interface RentalAgreementRow {
   rental_duration: string;
   rental_price: number;
   payment_method: string;
-  /** true si el cliente ya pagó al firmar; false si el pago queda pendiente */
+  /** true cuando el personal registró el cobro desde el panel admin; el alta público deja false por defecto */
   contract_paid?: boolean;
   signature_data: string | null;
   agreed_to_terms: boolean;

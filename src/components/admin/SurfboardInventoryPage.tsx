@@ -7,15 +7,18 @@ import {
   insertSurfboard,
   updateSurfboard,
 } from '../../services/surfboardInventoryService';
+import { formatSurfboardPublicLabel } from '../../utils/surfboardDisplay';
 
 export default function SurfboardInventoryPage() {
   const [rows, setRows] = useState<SurfboardInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newBrand, setNewBrand] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<SurfboardInventoryRow | null>(null);
+  const [editBrand, setEditBrand] = useState('');
   const [editNumber, setEditNumber] = useState('');
   const [editDesc, setEditDesc] = useState('');
 
@@ -38,7 +41,12 @@ export default function SurfboardInventoryPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    const brand = newBrand.trim();
     const num = newNumber.trim();
+    if (!brand) {
+      setError('Indica la marca de la tabla.');
+      return;
+    }
     if (!num) {
       setError('Indica el número de tabla.');
       return;
@@ -46,7 +54,12 @@ export default function SurfboardInventoryPage() {
     setSaving(true);
     setError(null);
     try {
-      await insertSurfboard({ board_number: num, description: newDesc.trim() || null });
+      await insertSurfboard({
+        brand,
+        board_number: num,
+        description: newDesc.trim() || null,
+      });
+      setNewBrand('');
       setNewNumber('');
       setNewDesc('');
       await load();
@@ -59,6 +72,7 @@ export default function SurfboardInventoryPage() {
 
   const openEdit = (row: SurfboardInventoryRow) => {
     setEditing(row);
+    setEditBrand(row.brand ?? '');
     setEditNumber(row.board_number);
     setEditDesc(row.description ?? '');
   };
@@ -70,7 +84,12 @@ export default function SurfboardInventoryPage() {
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
+    const brand = editBrand.trim();
     const num = editNumber.trim();
+    if (!brand) {
+      setError('La marca no puede estar vacía.');
+      return;
+    }
     if (!num) {
       setError('El número de tabla no puede estar vacío.');
       return;
@@ -78,7 +97,11 @@ export default function SurfboardInventoryPage() {
     setSaving(true);
     setError(null);
     try {
-      await updateSurfboard(editing.id, { board_number: num, description: editDesc.trim() || null });
+      await updateSurfboard(editing.id, {
+        brand,
+        board_number: num,
+        description: editDesc.trim() || null,
+      });
       closeEdit();
       await load();
     } catch (err) {
@@ -88,21 +111,20 @@ export default function SurfboardInventoryPage() {
     }
   };
 
-  const handleDelete = async (row: SurfboardInventoryRow) => {
-    if (
-      !window.confirm(
-        `¿Eliminar la tabla "${row.board_number}" del inventario? (p. ej. vendida o desechada)`
-      )
-    ) {
+  const handleDelete = (row: SurfboardInventoryRow) => {
+    const label = formatSurfboardPublicLabel(row);
+    if (!window.confirm(`¿Eliminar "${label}" del inventario? (p. ej. vendida o desechada)`)) {
       return;
     }
     setError(null);
-    try {
-      await deleteSurfboard(row.id);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al eliminar');
-    }
+    void (async () => {
+      try {
+        await deleteSurfboard(row.id);
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al eliminar');
+      }
+    })();
   };
 
   if (loading) {
@@ -120,7 +142,8 @@ export default function SurfboardInventoryPage() {
           Inventario de tablas
         </h1>
         <p className="text-gray-600 dark:text-slate-400 mb-8">
-          Registra el número de cada tabla y una descripción. Puedes editar o dar de baja tablas vendidas o desechadas.
+          Marca y número son los que verá el cliente al elegir tabla en el formulario de renta. La descripción es solo
+          para uso interno del equipo.
         </p>
 
         <form
@@ -129,6 +152,19 @@ export default function SurfboardInventoryPage() {
         >
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">Nueva tabla</h2>
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="form-label" htmlFor="inv-brand">
+                Marca *
+              </label>
+              <input
+                id="inv-brand"
+                value={newBrand}
+                onChange={(e) => setNewBrand(e.target.value)}
+                className="form-input"
+                placeholder="Ej: Firewire, Pyzel…"
+                autoComplete="off"
+              />
+            </div>
             <div>
               <label className="form-label" htmlFor="inv-board-number">
                 Nº de tabla *
@@ -144,14 +180,14 @@ export default function SurfboardInventoryPage() {
             </div>
             <div className="sm:col-span-2">
               <label className="form-label" htmlFor="inv-desc">
-                Descripción
+                Descripción (solo interno)
               </label>
               <textarea
                 id="inv-desc"
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
                 className="form-input min-h-[88px]"
-                placeholder="Modelo, medidas, estado, notas…"
+                placeholder="Modelo exacto, medidas, estado, notas para el personal…"
                 rows={3}
               />
             </div>
@@ -177,8 +213,11 @@ export default function SurfboardInventoryPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
                 <tr>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Marca</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nº tabla</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Descripción</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">
+                    Descripción (interno)
+                  </th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-32">
                     Acciones
                   </th>
@@ -187,15 +226,18 @@ export default function SurfboardInventoryPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                    <td colSpan={4} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
                       No hay tablas registradas. Añade la primera arriba.
                     </td>
                   </tr>
                 ) : (
                   rows.map((row) => (
                     <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50">
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">
+                        {(row.brand ?? '').trim() || '—'}
+                      </td>
                       <td className="px-4 py-3 font-bold text-blue-600 dark:text-cyan-400">{row.board_number}</td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-slate-200 whitespace-pre-wrap">
+                      <td className="px-4 py-3 text-gray-700 dark:text-slate-300 whitespace-pre-wrap text-xs">
                         {row.description || '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -232,11 +274,23 @@ export default function SurfboardInventoryPage() {
           aria-modal="true"
           aria-labelledby="edit-inv-title"
         >
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-lg w-full border border-gray-200 dark:border-slate-600 p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-lg w-full border border-gray-200 dark:border-slate-600 p-6 max-h-[90vh] overflow-y-auto">
             <h2 id="edit-inv-title" className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-4">
               Editar tabla
             </h2>
             <form onSubmit={handleSaveEdit}>
+              <div className="mb-4">
+                <label className="form-label" htmlFor="edit-brand">
+                  Marca *
+                </label>
+                <input
+                  id="edit-brand"
+                  value={editBrand}
+                  onChange={(e) => setEditBrand(e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
               <div className="mb-4">
                 <label className="form-label" htmlFor="edit-num">
                   Nº de tabla *
@@ -251,7 +305,7 @@ export default function SurfboardInventoryPage() {
               </div>
               <div className="mb-6">
                 <label className="form-label" htmlFor="edit-desc">
-                  Descripción
+                  Descripción (solo interno)
                 </label>
                 <textarea
                   id="edit-desc"

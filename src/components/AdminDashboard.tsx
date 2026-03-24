@@ -1,27 +1,51 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Eye, Calendar, DollarSign, User, Mail, Phone } from 'lucide-react';
 import { fetchRentalAgreements } from '../services/rentalAgreementService';
+import { fetchSurfboardInventory } from '../services/surfboardInventoryService';
 import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
+import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import {
   getAdminStatusBadge,
   isPendingPickup,
   isRentalOngoing,
   isReturnInPast,
 } from '../utils/rentalDisplayStatus';
+import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 
 export default function AdminDashboard() {
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
+  const [surfboards, setSurfboards] = useState<SurfboardInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
 
+  const surfboardByNumber = useMemo(() => {
+    const m = new Map<string, SurfboardInventoryRow>();
+    for (const r of surfboards) {
+      m.set(r.board_number.trim().toLowerCase(), r);
+    }
+    return m;
+  }, [surfboards]);
+
+  const surfboardDisplayLabel = useCallback(
+    (surfboardNumber: string | null | undefined): string => {
+      const raw = surfboardNumber?.trim();
+      if (!raw) return '-';
+      const row = surfboardByNumber.get(raw.toLowerCase());
+      if (row) return formatSurfboardPublicLabel(row);
+      return raw;
+    },
+    [surfboardByNumber]
+  );
+
   const loadAgreements = useCallback(async () => {
     setLoadError(null);
     setLoading(true);
     try {
-      const rows = await fetchRentalAgreements();
+      const [rows, inv] = await Promise.all([fetchRentalAgreements(), fetchSurfboardInventory()]);
       setAgreements(rows);
+      setSurfboards(inv);
     } catch (err) {
       console.error('Error fetching agreements:', err);
       setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los acuerdos');
@@ -34,13 +58,21 @@ export default function AdminDashboard() {
     loadAgreements();
   }, [loadAgreements]);
 
-  const filteredAgreements = agreements.filter(
-    (agreement) =>
-      agreement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredAgreements = agreements.filter((agreement) => {
+    const q = searchTerm.toLowerCase();
+    const num = agreement.surfboard_number?.trim();
+    const row = num ? surfboardByNumber.get(num.toLowerCase()) : undefined;
+    const surfboardSearch =
+      row != null
+        ? `${formatSurfboardPublicLabel(row)} ${(row.brand ?? '').toLowerCase()} ${row.board_number}`.toLowerCase()
+        : (num ?? '').toLowerCase();
+    return (
+      agreement.name.toLowerCase().includes(q) ||
+      agreement.email.toLowerCase().includes(q) ||
       agreement.phone.includes(searchTerm) ||
-      (agreement.surfboard_number && agreement.surfboard_number.includes(searchTerm))
-  );
+      surfboardSearch.includes(q)
+    );
+  });
 
   /**
    * 1) Pendiente de retirar
@@ -108,7 +140,7 @@ export default function AdminDashboard() {
             <Search className="w-5 h-5 text-gray-400 dark:text-slate-500 shrink-0" />
             <input
               type="text"
-              placeholder="Buscar por nombre, email o teléfono..."
+              placeholder="Buscar por nombre, email, teléfono o tabla (marca / número)…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-cyan-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-cyan-900/50 transition"
@@ -150,7 +182,7 @@ export default function AdminDashboard() {
                     Cliente
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
-                    Tabla #
+                    Tabla
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
                     Renta
@@ -182,7 +214,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-bold text-blue-600 dark:text-cyan-400">
-                        {agreement.surfboard_number || '-'}
+                        {surfboardDisplayLabel(agreement.surfboard_number)}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -322,10 +354,16 @@ export default function AdminDashboard() {
 
                 {selectedAgreement.surfboard_number && (
                   <div>
-                    <div className="text-sm text-gray-500 dark:text-slate-500">Número de Tabla</div>
+                    <div className="text-sm text-gray-500 dark:text-slate-500">Tabla</div>
                     <div className="font-semibold text-blue-600 dark:text-cyan-400 text-lg">
-                      {selectedAgreement.surfboard_number}
+                      {surfboardDisplayLabel(selectedAgreement.surfboard_number)}
                     </div>
+                    {surfboardByNumber.get(selectedAgreement.surfboard_number.trim().toLowerCase()) == null && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400/90 mt-1">
+                        Nº guardado en el contrato: {selectedAgreement.surfboard_number.trim()} (no está en el inventario
+                        actual)
+                      </div>
+                    )}
                   </div>
                 )}
 

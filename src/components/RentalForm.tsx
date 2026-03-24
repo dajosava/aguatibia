@@ -3,6 +3,7 @@ import { Waves, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import SignatureCanvas from './SignatureCanvas';
+import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
 import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
@@ -393,29 +394,18 @@ export default function RentalForm() {
                 </p>
               ) : (
                 <>
-                  <select
+                  <SurfboardCombobox
                     id="rental-board-num"
-                    name="surfboard_number"
+                    boards={surfboards}
                     value={formData.surfboard_number}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    required
-                  >
-                    <option value="">Selecciona una tabla…</option>
-                    {surfboards.map((b) => {
-                      const desc = b.description?.trim();
-                      const short =
-                        desc && desc.length > 90 ? `${desc.slice(0, 90)}…` : desc;
-                      return (
-                        <option key={b.id} value={b.board_number}>
-                          {b.board_number}
-                          {short ? ` — ${short}` : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    onChange={(boardNumber) =>
+                      setFormData((prev) => ({ ...prev, surfboard_number: boardNumber }))
+                    }
+                    disabled={surfboardsLoading}
+                  />
                   <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
-                    Solo se pueden elegir tablas dadas de alta en el inventario.
+                    Busca por marca, número o abre la lista. Se muestra marca y número; el contrato guarda el número de
+                    tabla. Solo tablas dadas de alta en el inventario.
                   </p>
                 </>
               )}

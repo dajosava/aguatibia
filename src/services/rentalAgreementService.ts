@@ -68,6 +68,7 @@ export async function fetchRentalAgreements(): Promise<RentalAgreementWithStoreI
       rental_price,
       payment_method,
       contract_paid,
+      customer_notes,
       signature_data,
       agreed_to_terms,
       status,
@@ -256,6 +257,18 @@ export async function checkoutCloseRentalAgreement(agreementId: string): Promise
   await checkoutCloseRentalAgreementViaRest(agreementId);
 }
 
+/** Actualiza solo comentarios del cliente (útil con contrato cerrado, donde no aplica «Guardar cambios» completo). */
+export async function updateRentalAgreementCustomerNotes(
+  agreementId: string,
+  customerNotes: string | null
+): Promise<void> {
+  const { error } = await supabase
+    .from('rental_agreements')
+    .update({ customer_notes: customerNotes })
+    .eq('id', agreementId);
+  if (error) throw error;
+}
+
 /** Estado de pago del contrato: solo desde el panel admin (detalle del acuerdo o modal de edición), no desde el formulario público. */
 export async function updateRentalAgreementContractPaid(
   agreementId: string,
@@ -276,6 +289,7 @@ export async function updateRentalAgreementWithStoreItems(
     board_checked_by: string | null;
     pickup: string | null;
     return_time: string | null;
+    customer_notes: string | null;
   },
   storeLines: RentalAgreementStoreLineInput[]
 ): Promise<void> {
@@ -305,6 +319,7 @@ export async function updateRentalAgreementWithStoreItems(
       board_checked_by: agreementPatch.board_checked_by,
       pickup: agreementPatch.pickup,
       return_time: agreementPatch.return_time,
+      customer_notes: agreementPatch.customer_notes,
     })
     .eq('id', agreementId);
 

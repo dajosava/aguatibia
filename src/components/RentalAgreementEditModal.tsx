@@ -7,6 +7,7 @@ import {
   checkoutCloseRentalAgreement,
   swapRentalSurfboard,
   syncRentalAgreementSurfboards,
+  updateRentalAgreementCustomerNotes,
   updateRentalAgreementContractPaid,
   updateRentalAgreementWithStoreItems,
 } from '../services/rentalAgreementService';
@@ -108,6 +109,8 @@ export default function RentalAgreementEditModal({
   const [boardEditLines, setBoardEditLines] = useState<{ id: string; boardNumber: string }[]>(() => [
     newBoardEditLine(),
   ]);
+  const [customerNotes, setCustomerNotes] = useState('');
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const isClosed = agreement.status === 'cerrado';
 
@@ -115,6 +118,7 @@ export default function RentalAgreementEditModal({
     setPickup(isoToDatetimeLocalValue(agreement.pickup));
     setReturnTime(isoToDatetimeLocalValue(agreement.return_time));
     setBoardCheckedBy(agreement.board_checked_by ?? '');
+    setCustomerNotes(agreement.customer_notes ?? '');
     const sorted = [...(agreement.rental_agreement_store_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
     setStoreItems(
       sorted.map((it) => ({
@@ -328,6 +332,7 @@ export default function RentalAgreementEditModal({
           board_checked_by: boardCheckedBy.trim() || null,
           pickup: pickup.trim() || null,
           return_time: returnTime.trim() || null,
+          customer_notes: customerNotes.trim() || null,
         },
         storeResult.lines
       );
@@ -388,6 +393,43 @@ export default function RentalAgreementEditModal({
                 </div>
               )}
             </div>
+
+            <div className="rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900/40 p-4 space-y-2">
+              <label className="form-label mb-0" htmlFor="edit-customer-notes-closed">
+                Comentarios o sugerencias del cliente
+              </label>
+              <textarea
+                id="edit-customer-notes-closed"
+                value={customerNotes}
+                onChange={(e) => setCustomerNotes(e.target.value)}
+                rows={4}
+                className="form-input min-h-[5rem] resize-y text-sm"
+              />
+              <button
+                type="button"
+                disabled={notesSaving}
+                onClick={() => {
+                  void (async () => {
+                    setError(null);
+                    setNotesSaving(true);
+                    try {
+                      await updateRentalAgreementCustomerNotes(agreement.id, customerNotes.trim() || null);
+                      await onRefresh();
+                    } catch (err) {
+                      setError(
+                        err instanceof Error ? err.message : 'No se pudieron guardar los comentarios'
+                      );
+                    } finally {
+                      setNotesSaving(false);
+                    }
+                  })();
+                }}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {notesSaving ? 'Guardando…' : 'Guardar solo comentarios'}
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={onClose}
@@ -438,6 +480,22 @@ export default function RentalAgreementEditModal({
                 className="form-input [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="form-label" htmlFor="edit-customer-notes">
+              Comentarios o sugerencias del cliente
+            </label>
+            <p className="text-xs text-gray-500 dark:text-slate-500 mb-2">
+              Texto libre del formulario público; puedes corregirlo o ampliarlo aquí.
+            </p>
+            <textarea
+              id="edit-customer-notes"
+              value={customerNotes}
+              onChange={(e) => setCustomerNotes(e.target.value)}
+              rows={4}
+              className="form-input min-h-[6rem] resize-y"
+            />
           </div>
 
           <div className="rounded-xl border-2 border-blue-200/80 dark:border-cyan-900/50 bg-blue-50/50 dark:bg-slate-800/40 p-4 space-y-3">

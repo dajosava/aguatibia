@@ -61,6 +61,7 @@ interface RentalFormData {
   pickup: string;
   return_time: string;
   board_checked_by: string;
+  customer_notes: string;
   rental_type: string;
   rental_duration: string;
   payment_method: string;
@@ -77,6 +78,7 @@ export default function RentalForm() {
     pickup: '',
     return_time: '',
     board_checked_by: '',
+    customer_notes: '',
     rental_type: '',
     rental_duration: '',
     payment_method: '',
@@ -260,6 +262,7 @@ export default function RentalForm() {
           return_time: formData.return_time || null,
           surfboard_number: nums[0],
           board_checked_by: formData.board_checked_by || null,
+          customer_notes: formData.customer_notes.trim() || null,
           rental_type: formData.rental_type,
           rental_duration: formData.rental_duration,
           rental_price: contractTotal,
@@ -286,6 +289,7 @@ export default function RentalForm() {
         pickup: '',
         return_time: '',
         board_checked_by: '',
+        customer_notes: '',
         rental_type: '',
         rental_duration: '',
         payment_method: '',
@@ -511,6 +515,22 @@ export default function RentalForm() {
                 <option value="Alexander">Alexander</option>
                 <option value="Martin">Martin</option>
               </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="form-label" htmlFor="rental-customer-notes">
+                {t.customerComments}
+              </label>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mb-2">{t.customerCommentsHint}</p>
+              <textarea
+                id="rental-customer-notes"
+                name="customer_notes"
+                value={formData.customer_notes}
+                onChange={(e) => setFormData((prev) => ({ ...prev, customer_notes: e.target.value }))}
+                rows={4}
+                className="form-input min-h-[6rem] resize-y"
+                placeholder={t.customerCommentsPlaceholder}
+              />
             </div>
           </div>
 

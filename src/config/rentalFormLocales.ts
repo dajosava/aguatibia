@@ -52,6 +52,9 @@ export type RentalFormStrings = {
   };
   boardCheckedBy: string;
   selectStaff: string;
+  customerComments: string;
+  customerCommentsHint: string;
+  customerCommentsPlaceholder: string;
   rentalOptionsSection: string;
   rentalOptionLabels: Record<string, string>;
   storeItemsSection: string;
@@ -131,6 +134,9 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     },
     boardCheckedBy: 'Board checked by',
     selectStaff: 'Select…',
+    customerComments: 'Comments or suggestions (optional)',
+    customerCommentsHint: 'Share any note for the school team.',
+    customerCommentsPlaceholder: 'e.g. preferred pickup time, equipment questions…',
     rentalOptionsSection: 'Rental options *',
     rentalOptionLabels: rentalOptionLabelsEn,
     storeItemsSection: 'Store items',
@@ -216,6 +222,9 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     },
     boardCheckedBy: 'Tabla revisada por',
     selectStaff: 'Seleccionar…',
+    customerComments: 'Comentarios o sugerencias (opcional)',
+    customerCommentsHint: 'Cualquier nota para el equipo de la escuela.',
+    customerCommentsPlaceholder: 'Ej. horario preferido de retiro, dudas sobre el equipo…',
     rentalOptionsSection: 'Opciones de renta *',
     rentalOptionLabels: rentalOptionLabelsEs,
     storeItemsSection: 'Productos de tienda',

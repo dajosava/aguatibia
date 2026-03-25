@@ -52,6 +52,8 @@ export interface RentalAgreementRow {
   payment_method: string;
   /** true cuando el personal registró el cobro desde el panel admin; el alta público deja false por defecto */
   contract_paid?: boolean;
+  /** Comentarios o sugerencias del cliente (formulario público / edición admin) */
+  customer_notes?: string | null;
   signature_data: string | null;
   agreed_to_terms: boolean;
   status: RentalAgreementStatus | string;

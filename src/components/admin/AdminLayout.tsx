@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { LayoutDashboard, LogOut, Waves } from 'lucide-react';
+import { Armchair, LayoutDashboard, LogOut, Waves } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type AdminSection = 'contracts' | 'inventory';
+export type AdminSection = 'contracts' | 'inventory' | 'rentalArticles';
 
 type Props = {
   active: AdminSection;
@@ -10,9 +10,10 @@ type Props = {
   children: ReactNode;
 };
 
-const nav: { id: AdminSection; label: string; icon: typeof LayoutDashboard }[] = [
+const nav: { id: AdminSection; label: string; icon: typeof LayoutDashboard | typeof Waves | typeof Armchair }[] = [
   { id: 'contracts', label: 'Acuerdos de renta', icon: LayoutDashboard },
   { id: 'inventory', label: 'Inventario de tablas', icon: Waves },
+  { id: 'rentalArticles', label: 'Artículos de renta', icon: Armchair },
 ];
 
 export default function AdminLayout({ active, onNavigate, children }: Props) {

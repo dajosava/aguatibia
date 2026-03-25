@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Eye, Pencil, Calendar, DollarSign, User, Mail, Phone } from 'lucide-react';
+import { Search, Eye, Pencil, Calendar, DollarSign, User, Mail, Phone, MessageSquare } from 'lucide-react';
 import RentalAgreementEditModal from './RentalAgreementEditModal';
 import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
 import { fetchRentalAgreements, updateRentalAgreementContractPaid } from '../services/rentalAgreementService';
@@ -443,6 +443,18 @@ export default function AdminDashboard() {
                     <div className="font-semibold text-gray-900 dark:text-slate-100">{selectedAgreement.address}</div>
                   </div>
                 )}
+
+                <div className="md:col-span-2">
+                  <div className="text-sm text-gray-500 dark:text-slate-500 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 shrink-0 text-blue-600 dark:text-cyan-400" aria-hidden />
+                    Comentarios / sugerencias del cliente
+                  </div>
+                  <div className="mt-2 text-sm text-gray-900 dark:text-slate-200 whitespace-pre-wrap rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50/70 dark:bg-slate-800/50 p-3 min-h-[2.5rem]">
+                    {selectedAgreement.customer_notes?.trim()
+                      ? selectedAgreement.customer_notes
+                      : 'Sin comentarios'}
+                  </div>
+                </div>
 
                 <div>
                   <div className="text-sm text-gray-500 dark:text-slate-500">Pickup</div>

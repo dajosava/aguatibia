@@ -101,7 +101,7 @@ export default function AdminMetricsPage() {
       setInventory(inv);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'No se pudieron cargar las métricas');
+      setError(err instanceof Error ? err.message : 'No se pudieron cargar los datos de analítica y reportes');
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ export default function AdminMetricsPage() {
     return (
       <div className="p-6 lg:p-8">
         <div className="flex items-center justify-center min-h-[40vh] text-gray-600 dark:text-slate-400">
-          Cargando métricas…
+          Cargando analítica y reportes…
         </div>
       </div>
     );
@@ -166,7 +166,7 @@ export default function AdminMetricsPage() {
             <BarChart3 className="w-6 h-6 text-blue-800 dark:text-cyan-200" aria-hidden />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">Métricas</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">Analítica y reportes</h2>
             <p className="text-sm text-gray-600 dark:text-slate-400 mt-0.5">
               Resumen de acuerdos, tablas y ventas en tienda registradas en el sistema.
             </p>

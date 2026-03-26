@@ -16,7 +16,7 @@ const nav: {
   icon: typeof LayoutDashboard | typeof Waves | typeof Armchair | typeof ShoppingBag | typeof BarChart3;
 }[] = [
   { id: 'contracts', label: 'Acuerdos de renta', icon: LayoutDashboard },
-  { id: 'metrics', label: 'Métricas', icon: BarChart3 },
+  { id: 'metrics', label: 'Analítica y reportes', icon: BarChart3 },
   { id: 'inventory', label: 'Inventario de tablas', icon: Waves },
   { id: 'storeArticles', label: 'Artículos de tienda', icon: ShoppingBag },
   { id: 'rentalArticles', label: 'Artículos de renta', icon: Armchair },

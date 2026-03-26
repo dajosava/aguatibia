@@ -15,12 +15,23 @@ export interface StoreItemLine {
   id: string;
   productName: string;
   price: string;
+  /** Fila elegida desde catálogo (formulario público); el precio viene solo del catálogo. */
+  catalogProductId?: string | null;
 }
+
+export type StoreProductLineCatalogUi = {
+  placeholder: string;
+  noResults: string;
+};
 
 type Props = {
   row: StoreItemLine;
   catalog: StoreProductRow[];
   onChange: (lineId: string, patch: Partial<StoreItemLine>) => void;
+  /** `catalog`: solo productos del catálogo, sin productos nuevos ni precio manual. */
+  mode?: 'freeform' | 'catalog';
+  /** Textos cuando `mode === 'catalog'` (obligatorio en ese modo). */
+  catalogUi?: StoreProductLineCatalogUi;
 };
 
 const MAX_LIST = 200;
@@ -57,7 +68,13 @@ function getScrollTargets(el: HTMLElement | null): (HTMLElement | Window)[] {
   return out;
 }
 
-export default function StoreProductLineInput({ row, catalog, onChange }: Props) {
+export default function StoreProductLineInput({
+  row,
+  catalog,
+  onChange,
+  mode = 'freeform',
+  catalogUi,
+}: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
@@ -177,8 +194,27 @@ export default function StoreProductLineInput({ row, catalog, onChange }: Props)
     onChange(row.id, {
       productName: p.name,
       price: Number(p.unit_price).toFixed(2),
+      catalogProductId: mode === 'catalog' ? p.id : null,
     });
     setOpen(false);
+  };
+
+  const selectedCatalog =
+    row.catalogProductId && mode === 'catalog'
+      ? catalog.find((p) => p.id === row.catalogProductId)
+      : null;
+
+  const handleProductNameChange = (value: string) => {
+    if (mode === 'catalog') {
+      if (
+        selectedCatalog &&
+        value.trim().toLowerCase() !== selectedCatalog.name.trim().toLowerCase()
+      ) {
+        onChange(row.id, { productName: value, catalogProductId: null, price: '' });
+        return;
+      }
+    }
+    onChange(row.id, { productName: value });
   };
 
   const toggleDropdown = () => {
@@ -206,7 +242,9 @@ export default function StoreProductLineInput({ row, catalog, onChange }: Props)
       ))
     ) : (
       <li className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400" role="presentation">
-        No hay coincidencias. Puedes escribir un producto nuevo.
+        {mode === 'catalog' && catalogUi
+          ? catalogUi.noResults
+          : 'No hay coincidencias. Puedes escribir un producto nuevo.'}
       </li>
     );
 
@@ -217,7 +255,7 @@ export default function StoreProductLineInput({ row, catalog, onChange }: Props)
           type="text"
           value={row.productName}
           onChange={(e) => {
-            onChange(row.id, { productName: e.target.value });
+            handleProductNameChange(e.target.value);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
@@ -227,7 +265,11 @@ export default function StoreProductLineInput({ row, catalog, onChange }: Props)
           aria-controls={showPanel ? listId : undefined}
           aria-autocomplete="list"
           className="form-input min-w-0 flex-1 py-2 text-sm"
-          placeholder="Escribe para buscar o elige en la lista"
+          placeholder={
+            mode === 'catalog' && catalogUi
+              ? catalogUi.placeholder
+              : 'Escribe para buscar o elige en la lista'
+          }
         />
         {catalog.length > 0 && (
           <button

@@ -4,6 +4,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import AdminLayout from './components/admin/AdminLayout';
 import SurfboardInventoryPage from './components/admin/SurfboardInventoryPage';
+import StoreArticlesCatalogPage from './components/admin/StoreArticlesCatalogPage';
 import RentalArticlesInventoryPage from './components/admin/RentalArticlesInventoryPage';
 import type { AdminSection } from './components/admin/AdminLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -70,6 +71,8 @@ function AppContent() {
               <AdminDashboard />
             ) : adminSection === 'inventory' ? (
               <SurfboardInventoryPage />
+            ) : adminSection === 'storeArticles' ? (
+              <StoreArticlesCatalogPage />
             ) : (
               <RentalArticlesInventoryPage />
             )}

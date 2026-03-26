@@ -15,7 +15,7 @@ import type { StoreProductRow } from '../types/storeProduct';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 
 function newStoreLine(): StoreItemLine {
-  return { id: crypto.randomUUID(), productName: '', price: '' };
+  return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null };
 }
 
 function newBoardLine(): { id: string; boardNumber: string } {
@@ -29,26 +29,29 @@ function parseMoneyInput(raw: string): number {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
 }
 
-function collectStoreLines(
+function collectStoreLinesFromCatalog(
   rows: StoreItemLine[],
+  catalog: StoreProductRow[],
   v: RentalFormValidationMessages
 ): { ok: true; lines: { product_name: string; unit_price: number }[] } | { ok: false; message: string } {
+  const byId = new Map(catalog.map((p) => [p.id, p]));
   const lines: { product_name: string; unit_price: number }[] = [];
   for (const r of rows) {
     const name = r.productName.trim();
-    const rawPrice = r.price.trim();
-    if (!name && !rawPrice) continue;
-    if (name && !rawPrice) {
-      return { ok: false, message: v.storePriceMissing };
+    const id = r.catalogProductId?.trim() ?? '';
+    if (!name && !id) continue;
+    if (!id) {
+      return { ok: false, message: v.storeMustSelectFromCatalog };
     }
-    if (!name && rawPrice) {
-      return { ok: false, message: v.storeNameMissing };
+    const prod = byId.get(id);
+    if (!prod) {
+      return { ok: false, message: v.storeProductNotInCatalog };
     }
-    const p = parseMoneyInput(rawPrice);
-    if (Number.isNaN(p)) {
+    const unit = Math.round(Number(prod.unit_price) * 100) / 100;
+    if (!Number.isFinite(unit) || unit < 0) {
       return { ok: false, message: v.storePriceInvalid };
     }
-    lines.push({ product_name: name, unit_price: p });
+    lines.push({ product_name: prod.name, unit_price: unit });
   }
   return { ok: true, lines };
 }
@@ -238,7 +241,7 @@ export default function RentalForm() {
       }
     }
 
-    const storeResult = collectStoreLines(storeItems, t.validation);
+    const storeResult = collectStoreLinesFromCatalog(storeItems, productCatalog, t.validation);
     if (!storeResult.ok) {
       setError(storeResult.message);
       setIsSubmitting(false);
@@ -594,6 +597,11 @@ export default function RentalForm() {
                           <StoreProductLineInput
                             row={row}
                             catalog={productCatalog}
+                            mode="catalog"
+                            catalogUi={{
+                              placeholder: t.storeCatalogSearchPlaceholder,
+                              noResults: t.storeCatalogNoMatch,
+                            }}
                             onChange={(lineId, patch) =>
                               setStoreItems((prev) =>
                                 prev.map((r) => (r.id === lineId ? { ...r, ...patch } : r))
@@ -602,18 +610,14 @@ export default function RentalForm() {
                           />
                         </td>
                         <td className="px-3 py-2 align-top">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={row.price}
-                            onChange={(e) =>
-                              setStoreItems((prev) =>
-                                prev.map((r) => (r.id === row.id ? { ...r, price: e.target.value } : r))
-                              )
-                            }
-                            className="form-input py-2 text-sm"
-                            placeholder="0.00"
-                          />
+                          <span className="inline-block py-2 text-sm tabular-nums text-gray-800 dark:text-slate-200">
+                            {(() => {
+                              const n = parseMoneyInput(row.price);
+                              return row.catalogProductId && Number.isFinite(n)
+                                ? `$${n.toFixed(2)}`
+                                : '—';
+                            })()}
+                          </span>
                         </td>
                         <td className="px-1 py-2 text-center">
                           <button

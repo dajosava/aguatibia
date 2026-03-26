@@ -19,7 +19,7 @@ import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 
 function newStoreLine(): StoreItemLine {
-  return { id: crypto.randomUUID(), productName: '', price: '' };
+  return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null };
 }
 
 function parseMoneyInput(raw: string): number {
@@ -125,6 +125,7 @@ export default function RentalAgreementEditModal({
         id: crypto.randomUUID(),
         productName: it.product_name,
         price: Number(it.unit_price).toFixed(2),
+        catalogProductId: null,
       }))
     );
     setError(null);
@@ -361,6 +362,8 @@ export default function RentalAgreementEditModal({
             {isClosed ? 'Acuerdo cerrado' : 'Editar acuerdo'}
           </h2>
           <p className="text-sm text-blue-100 dark:text-slate-400 mt-1">
+            <span className="font-semibold text-white dark:text-slate-200">N.º {agreement.agreement_number}</span>
+            {' · '}
             {agreement.name} — {agreement.rental_type.replace(/_/g, ' ')} · {agreement.rental_duration}
           </p>
         </div>

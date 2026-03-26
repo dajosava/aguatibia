@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Eye, Pencil, Calendar, DollarSign, User, Mail, Phone, MessageSquare } from 'lucide-react';
+import { Search, Eye, Pencil, Calendar, DollarSign, User, Mail, Phone, MessageSquare, Printer } from 'lucide-react';
 import RentalAgreementEditModal from './RentalAgreementEditModal';
 import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
 import { fetchRentalAgreements, updateRentalAgreementContractPaid } from '../services/rentalAgreementService';
@@ -17,6 +17,7 @@ import {
 } from '../utils/rentalDisplayStatus';
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
+import { printRentalAgreement } from '../utils/rentalAgreementPrint';
 
 export default function AdminDashboard() {
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
@@ -111,6 +112,11 @@ export default function AdminDashboard() {
 
   const filteredAgreements = agreements.filter((agreement) => {
     const q = searchTerm.toLowerCase();
+    const numQuery = searchTerm.trim().replace(/^#/i, '');
+    const matchesFormNumber =
+      numQuery.length > 0 &&
+      /^\d+$/.test(numQuery) &&
+      String(agreement.agreement_number).includes(numQuery);
     const boardNums = getAgreementBoardNumbers(agreement);
     const surfboardSearch = boardNums
       .flatMap((num) => {
@@ -125,6 +131,7 @@ export default function AdminDashboard() {
       })
       .join(' ');
     return (
+      matchesFormNumber ||
       agreement.name.toLowerCase().includes(q) ||
       agreement.email.toLowerCase().includes(q) ||
       agreement.phone.includes(searchTerm) ||
@@ -209,7 +216,7 @@ export default function AdminDashboard() {
             <Search className="w-5 h-5 text-gray-400 dark:text-slate-500 shrink-0" />
             <input
               type="text"
-              placeholder="Buscar por nombre, email, teléfono o tabla (marca / número)…"
+              placeholder="Buscar por n.º de formulario (#12), nombre, email, teléfono o tabla…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-cyan-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-cyan-900/50 transition"
@@ -247,6 +254,9 @@ export default function AdminDashboard() {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-slate-800/80 border-b-2 border-gray-200 dark:border-slate-600">
                 <tr>
+                  <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider w-24">
+                    N.º form.
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
                     Cliente
                   </th>
@@ -278,6 +288,11 @@ export default function AdminDashboard() {
                   const rowBoards = getAgreementBoardNumbers(agreement);
                   return (
                   <tr key={agreement.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition">
+                    <td className="px-4 py-4 align-top">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold tabular-nums text-sm">
+                        {agreement.agreement_number != null ? agreement.agreement_number : '—'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-900 dark:text-slate-100">{agreement.name}</div>
                       <div className="text-sm text-gray-500 dark:text-slate-400">{agreement.email}</div>
@@ -397,8 +412,32 @@ export default function AdminDashboard() {
             className="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-transparent dark:border-slate-700"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 p-6 text-white border-b border-blue-900/30">
-              <h2 className="text-2xl font-bold">Detalles del Acuerdo</h2>
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 p-6 text-white border-b border-blue-900/30 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-blue-100 dark:text-slate-300 tracking-wide uppercase">
+                  Formulario n.º {selectedAgreement.agreement_number}
+                </p>
+                <h2 className="text-2xl font-bold mt-1">Detalles del acuerdo</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  printRentalAgreement(
+                    selectedAgreement,
+                    selectedDetailBoards.map((num) => ({
+                      label: surfboardDisplayLabel(num),
+                      note:
+                        surfboardByNumber.get(num.trim().toLowerCase()) == null
+                          ? `Nº en contrato: ${num.trim()} (no está en el inventario actual)`
+                          : undefined,
+                    }))
+                  )
+                }
+                className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-lg bg-white/95 text-blue-900 hover:bg-white font-semibold text-sm shadow-md ring-1 ring-white/40 transition dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600 dark:hover:bg-slate-700"
+              >
+                <Printer className="w-5 h-5 shrink-0" aria-hidden />
+                Imprimir PDF
+              </button>
             </div>
 
             <div className="p-6 space-y-6">

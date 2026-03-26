@@ -6,3 +6,13 @@ export interface StoreProductRow {
   created_at?: string;
   updated_at?: string;
 }
+
+export type StoreProductInsert = {
+  name: string;
+  unit_price: number;
+};
+
+export type StoreProductUpdate = {
+  name?: string;
+  unit_price?: number;
+};

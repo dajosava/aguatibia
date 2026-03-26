@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { Armchair, LayoutDashboard, LogOut, Waves } from 'lucide-react';
+import { Armchair, LayoutDashboard, LogOut, ShoppingBag, Waves } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type AdminSection = 'contracts' | 'inventory' | 'rentalArticles';
+export type AdminSection = 'contracts' | 'inventory' | 'storeArticles' | 'rentalArticles';
 
 type Props = {
   active: AdminSection;
@@ -10,9 +10,14 @@ type Props = {
   children: ReactNode;
 };
 
-const nav: { id: AdminSection; label: string; icon: typeof LayoutDashboard | typeof Waves | typeof Armchair }[] = [
+const nav: {
+  id: AdminSection;
+  label: string;
+  icon: typeof LayoutDashboard | typeof Waves | typeof Armchair | typeof ShoppingBag;
+}[] = [
   { id: 'contracts', label: 'Acuerdos de renta', icon: LayoutDashboard },
   { id: 'inventory', label: 'Inventario de tablas', icon: Waves },
+  { id: 'storeArticles', label: 'Artículos de tienda', icon: ShoppingBag },
   { id: 'rentalArticles', label: 'Artículos de renta', icon: Armchair },
 ];
 

@@ -5,6 +5,9 @@ export type RentalFormValidationMessages = {
   storePriceMissing: string;
   storeNameMissing: string;
   storePriceInvalid: string;
+  /** Formulario público: obliga a elegir solo del catálogo. */
+  storeMustSelectFromCatalog: string;
+  storeProductNotInCatalog: string;
 };
 
 export type RentalFormErrorMessages = {
@@ -62,6 +65,9 @@ export type RentalFormStrings = {
   storeHelp: string;
   storeTableProduct: string;
   storeTablePrice: string;
+  storeCatalogSearchPlaceholder: string;
+  storeCatalogNoMatch: string;
+  storeCatalogEmpty: string;
   removeRowAria: string;
   noStoreItems: string;
   pricePerBoard: string;
@@ -146,9 +152,13 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     storeItemsSection: 'Store items',
     addProduct: 'Add product',
     storeHelp:
-      'Optional: shop products. Open the list with the arrow or type to filter; when you pick a saved product, the price fills in automatically.',
+      'Optional: shop items from the catalog only. Search and pick a product from the list — prices are set in the admin panel and cannot be changed here.',
     storeTableProduct: 'Product',
-    storeTablePrice: 'Price (USD)',
+    storeTablePrice: 'Price (catalog)',
+    storeCatalogSearchPlaceholder: 'Search the catalog and pick a product…',
+    storeCatalogNoMatch: 'No matches in the catalog. Choose a product registered in admin.',
+    storeCatalogEmpty:
+      'No products in the catalog yet. Staff must add store products in the admin before they appear here.',
     removeRowAria: 'Remove line',
     noStoreItems: 'No store items added.',
     pricePerBoard: 'Price per board:',
@@ -178,6 +188,10 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
       storePriceMissing: 'Enter a price for each store product or remove the empty row.',
       storeNameMissing: 'Enter a product name or clear the price on that row.',
       storePriceInvalid: 'Store prices must be valid numbers (e.g. 10 or 10.50).',
+      storeMustSelectFromCatalog:
+        'Each store line must be a product chosen from the list (prices cannot be entered manually).',
+      storeProductNotInCatalog:
+        'A selected product is no longer in the catalog. Refresh the page or pick another product.',
     },
     errors: {
       signRequired: 'Please sign the agreement before submitting',
@@ -234,9 +248,13 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     storeItemsSection: 'Productos de tienda',
     addProduct: 'Añadir producto',
     storeHelp:
-      'Opcional: productos de tienda. Abre la lista con la flecha o escribe para filtrar; al elegir un producto guardado, el precio se rellena solo.',
+      'Opcional: artículos solo del catálogo de tienda. Busca y elige un producto de la lista — los precios se definen en el panel administrativo y no se pueden cambiar aquí.',
     storeTableProduct: 'Producto',
-    storeTablePrice: 'Precio (USD)',
+    storeTablePrice: 'Precio (catálogo)',
+    storeCatalogSearchPlaceholder: 'Busca en el catálogo y elige un producto…',
+    storeCatalogNoMatch: 'No hay coincidencias en el catálogo. Elige un producto dado de alta en administración.',
+    storeCatalogEmpty:
+      'Aún no hay productos en el catálogo. El personal debe darlos de alta en el panel administrativo para que aparezcan aquí.',
     removeRowAria: 'Quitar línea',
     noStoreItems: 'Sin productos de tienda.',
     pricePerBoard: 'Precio por tabla:',
@@ -266,6 +284,10 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
       storePriceMissing: 'Indica el precio de cada producto de tienda o elimina la fila vacía.',
       storeNameMissing: 'Indica el nombre del producto o borra el precio en esa fila.',
       storePriceInvalid: 'Revisa que los precios de tienda sean números válidos (ej. 10 o 10.50).',
+      storeMustSelectFromCatalog:
+        'Cada línea de tienda debe ser un producto elegido de la lista (no se puede escribir el precio a mano).',
+      storeProductNotInCatalog:
+        'Un producto elegido ya no está en el catálogo. Recarga la página o elige otro.',
     },
     errors: {
       signRequired: 'Debes firmar el acuerdo antes de enviar',

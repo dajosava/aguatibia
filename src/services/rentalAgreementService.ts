@@ -55,6 +55,7 @@ export async function fetchRentalAgreements(): Promise<RentalAgreementWithStoreI
     .select(
       `
       id,
+      agreement_number,
       name,
       email,
       phone,

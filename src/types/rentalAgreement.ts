@@ -38,6 +38,8 @@ export interface StoreItemRow {
 /** Fila tal como viene de Supabase */
 export interface RentalAgreementRow {
   id: string;
+  /** Número consecutivo del formulario (1, 2, 3…); asignado por la base al insertar. */
+  agreement_number: number;
   name: string;
   email: string;
   phone: string;
@@ -67,7 +69,7 @@ export interface RentalAgreementWithStoreItems extends RentalAgreementRow {
 }
 
 /** Payload de inserción desde el formulario público */
-export type RentalAgreementInsert = Omit<RentalAgreementRow, 'id' | 'created_at'> & {
+export type RentalAgreementInsert = Omit<RentalAgreementRow, 'id' | 'created_at' | 'agreement_number'> & {
   id?: string;
   created_at?: string;
 };

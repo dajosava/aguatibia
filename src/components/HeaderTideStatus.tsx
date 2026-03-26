@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Waves } from 'lucide-react';
+import { usePublicFormLang } from '../contexts/PublicFormLangContext';
 import { useCostaRicaClock } from '../hooks/useCostaRicaClock';
 import { fetchTodayTideSummary, type TideDaySummary } from '../services/marineTideService';
 
@@ -9,7 +10,8 @@ const headerEmphasis =
   'font-bold text-slate-900 dark:text-white dark:[text-shadow:0_0_10px_rgba(255,255,255,0.45),0_1px_2px_rgba(0,0,0,0.35)]';
 
 export default function HeaderTideStatus() {
-  const { now, label } = useCostaRicaClock();
+  const { lang } = usePublicFormLang();
+  const { now, label } = useCostaRicaClock(lang);
   const [summary, setSummary] = useState<TideDaySummary | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 

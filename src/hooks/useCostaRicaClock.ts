@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { RentalFormLang } from '../config/rentalFormLocales';
 
-const CR_LOCALE = 'es-CR';
 const CR_TIMEZONE = 'America/Costa_Rica';
 
 const formatOptions: Intl.DateTimeFormatOptions = {
@@ -15,12 +15,16 @@ const formatOptions: Intl.DateTimeFormatOptions = {
   hour12: true,
 };
 
-export function useCostaRicaClock(updateEveryMs = 1000) {
+function intlLocale(lang: RentalFormLang): string {
+  return lang === 'en' ? 'en-US' : 'es-CR';
+}
+
+export function useCostaRicaClock(lang: RentalFormLang, updateEveryMs = 1000) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), updateEveryMs);
     return () => window.clearInterval(id);
   }, [updateEveryMs]);
-  const label = now.toLocaleString(CR_LOCALE, formatOptions);
+  const label = now.toLocaleString(intlLocale(lang), formatOptions);
   return { now, label };
 }

@@ -87,7 +87,8 @@ function FooterAguaTibiaContact({ formFooter }: { formFooter: FormPageFooterStri
 }
 
 function AdminFooterMinimal() {
-  const { now, label } = useCostaRicaClock();
+  const { lang } = usePublicFormLang();
+  const { now, label } = useCostaRicaClock(lang);
 
   return (
     <footer className="bg-white border-t border-gray-200 py-4 mt-12 dark:bg-slate-900 dark:border-slate-700">

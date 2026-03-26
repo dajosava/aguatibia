@@ -5,7 +5,7 @@ import type {
   StoreProductUpdate,
 } from '../types/storeProduct';
 
-const SELECT = 'id, name, unit_price, created_at, updated_at';
+const SELECT = 'id, name, unit_price, stock_quantity, created_at, updated_at';
 
 /** Catálogo para autocompletado (lectura pública con RLS). */
 export async function fetchStoreProducts(): Promise<StoreProductRow[]> {
@@ -22,6 +22,7 @@ export async function insertStoreProduct(row: StoreProductInsert): Promise<Store
     .insert({
       name: row.name.trim(),
       unit_price: row.unit_price,
+      stock_quantity: row.stock_quantity ?? 0,
     })
     .select(SELECT)
     .single();
@@ -34,6 +35,7 @@ export async function updateStoreProduct(id: string, patch: StoreProductUpdate):
   const payload: Record<string, unknown> = {};
   if (patch.name !== undefined) payload.name = patch.name.trim();
   if (patch.unit_price !== undefined) payload.unit_price = patch.unit_price;
+  if (patch.stock_quantity !== undefined) payload.stock_quantity = patch.stock_quantity;
   if (Object.keys(payload).length === 0) return;
   payload.updated_at = new Date().toISOString();
 

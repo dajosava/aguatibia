@@ -8,6 +8,9 @@ export type RentalFormValidationMessages = {
   /** Formulario público: obliga a elegir solo del catálogo. */
   storeMustSelectFromCatalog: string;
   storeProductNotInCatalog: string;
+  storeQuantityInvalid: string;
+  /** Placeholders: {name} producto, {max} stock disponible. */
+  storeInsufficientStock: string;
 };
 
 export type RentalFormErrorMessages = {
@@ -64,7 +67,11 @@ export type RentalFormStrings = {
   addProduct: string;
   storeHelp: string;
   storeTableProduct: string;
+  storeTableQuantity: string;
+  /** Precio unitario en catálogo (solo referencia; el importe depende de la cantidad). */
   storeTablePrice: string;
+  /** unitario × cantidad */
+  storeTableLineTotal: string;
   storeCatalogSearchPlaceholder: string;
   storeCatalogNoMatch: string;
   storeCatalogEmpty: string;
@@ -152,9 +159,11 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     storeItemsSection: 'Store items',
     addProduct: 'Add product',
     storeHelp:
-      'Optional: shop items from the catalog only. Search and pick a product from the list — prices are set in the admin panel and cannot be changed here.',
+      'Optional: shop items from the catalog only. Search and pick a product from the list — prices are set in the admin panel and cannot be changed here. Set the quantity per line; stock is checked against inventory when you submit.',
     storeTableProduct: 'Product',
-    storeTablePrice: 'Price (catalog)',
+    storeTableQuantity: 'Qty',
+    storeTablePrice: 'Unit (catalog)',
+    storeTableLineTotal: 'Line total',
     storeCatalogSearchPlaceholder: 'Search the catalog and pick a product…',
     storeCatalogNoMatch: 'No matches in the catalog. Choose a product registered in admin.',
     storeCatalogEmpty:
@@ -192,6 +201,9 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
         'Each store line must be a product chosen from the list (prices cannot be entered manually).',
       storeProductNotInCatalog:
         'A selected product is no longer in the catalog. Refresh the page or pick another product.',
+      storeQuantityInvalid: 'Enter a valid quantity (whole number, at least 1).',
+      storeInsufficientStock:
+        'Not enough stock for «{name}». Available: {max}. Reduce the quantity or remove the line.',
     },
     errors: {
       signRequired: 'Please sign the agreement before submitting',
@@ -248,9 +260,11 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     storeItemsSection: 'Productos de tienda',
     addProduct: 'Añadir producto',
     storeHelp:
-      'Opcional: artículos solo del catálogo de tienda. Busca y elige un producto de la lista — los precios se definen en el panel administrativo y no se pueden cambiar aquí.',
+      'Opcional: artículos solo del catálogo de tienda. Busca y elige un producto de la lista — los precios se definen en el panel administrativo y no se pueden cambiar aquí. Indica la cantidad por línea; al enviar se valida contra el inventario.',
     storeTableProduct: 'Producto',
-    storeTablePrice: 'Precio (catálogo)',
+    storeTableQuantity: 'Cant.',
+    storeTablePrice: 'P. unit.',
+    storeTableLineTotal: 'Importe',
     storeCatalogSearchPlaceholder: 'Busca en el catálogo y elige un producto…',
     storeCatalogNoMatch: 'No hay coincidencias en el catálogo. Elige un producto dado de alta en administración.',
     storeCatalogEmpty:
@@ -288,6 +302,9 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
         'Cada línea de tienda debe ser un producto elegido de la lista (no se puede escribir el precio a mano).',
       storeProductNotInCatalog:
         'Un producto elegido ya no está en el catálogo. Recarga la página o elige otro.',
+      storeQuantityInvalid: 'Indica una cantidad válida (número entero ≥ 1).',
+      storeInsufficientStock:
+        'No hay suficiente stock de «{name}». Disponible: {max}. Reduce la cantidad o quita la línea.',
     },
     errors: {
       signRequired: 'Debes firmar el acuerdo antes de enviar',

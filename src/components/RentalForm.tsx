@@ -5,6 +5,7 @@ import 'react-phone-number-input/style.css';
 import SignatureCanvas from './SignatureCanvas';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
+import StoreLineQuantityStepper from './StoreLineQuantityStepper';
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
 import type { RentalFormLang, RentalFormValidationMessages } from '../config/rentalFormLocales';
 import { RENTAL_FORM_STRINGS } from '../config/rentalFormLocales';
@@ -12,10 +13,12 @@ import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreement
 import { fetchStoreProducts } from '../services/storeCatalogService';
 import { fetchSurfboardInventoryForRental } from '../services/surfboardInventoryService';
 import type { StoreProductRow } from '../types/storeProduct';
+import { parseStoreLineQuantity } from '../utils/storeLineQuantity';
+import { clampPublicStoreQuantities, maxQuantityForPublicStoreRow } from '../utils/storeRowMaxQuantity';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 
 function newStoreLine(): StoreItemLine {
-  return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null };
+  return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null, quantity: 1 };
 }
 
 function newBoardLine(): { id: string; boardNumber: string } {
@@ -35,6 +38,38 @@ function collectStoreLinesFromCatalog(
   v: RentalFormValidationMessages
 ): { ok: true; lines: { product_name: string; unit_price: number }[] } | { ok: false; message: string } {
   const byId = new Map(catalog.map((p) => [p.id, p]));
+
+  const requestedByCatalogId = new Map<string, number>();
+  for (const r of rows) {
+    const name = r.productName.trim();
+    const id = r.catalogProductId?.trim() ?? '';
+    if (!name && !id) continue;
+    if (!id) {
+      return { ok: false, message: v.storeMustSelectFromCatalog };
+    }
+    const prod = byId.get(id);
+    if (!prod) {
+      return { ok: false, message: v.storeProductNotInCatalog };
+    }
+    const qty = parseStoreLineQuantity(r);
+    if (qty === null) {
+      return { ok: false, message: v.storeQuantityInvalid };
+    }
+    requestedByCatalogId.set(id, (requestedByCatalogId.get(id) ?? 0) + qty);
+  }
+
+  for (const [id, total] of requestedByCatalogId) {
+    const prod = byId.get(id);
+    if (!prod) continue;
+    const stock = Number(prod.stock_quantity ?? 0);
+    if (total > stock) {
+      return {
+        ok: false,
+        message: v.storeInsufficientStock.replace('{name}', prod.name).replace('{max}', String(stock)),
+      };
+    }
+  }
+
   const lines: { product_name: string; unit_price: number }[] = [];
   for (const r of rows) {
     const name = r.productName.trim();
@@ -51,7 +86,13 @@ function collectStoreLinesFromCatalog(
     if (!Number.isFinite(unit) || unit < 0) {
       return { ok: false, message: v.storePriceInvalid };
     }
-    lines.push({ product_name: prod.name, unit_price: unit });
+    const qty = parseStoreLineQuantity(r);
+    if (qty === null) {
+      return { ok: false, message: v.storeQuantityInvalid };
+    }
+    for (let i = 0; i < qty; i++) {
+      lines.push({ product_name: prod.name, unit_price: unit });
+    }
   }
   return { ok: true, lines };
 }
@@ -152,7 +193,8 @@ export default function RentalForm() {
   const getStoreItemsSubtotal = () =>
     storeItems.reduce((sum, row) => {
       const p = parseMoneyInput(row.price.trim());
-      return sum + (Number.isFinite(p) ? p : 0);
+      const q = parseStoreLineQuantity(row) ?? 1;
+      return sum + (Number.isFinite(p) ? p * q : 0);
     }, 0);
 
   const getContractTotal = () => getRentalSubtotal() + getStoreItemsSubtotal();
@@ -584,8 +626,11 @@ export default function RentalForm() {
                       <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 min-w-[28rem] w-[28rem]">
                         {t.storeTableProduct}
                       </th>
+                      <th className="text-center px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-24">
+                        {t.storeTableQuantity}
+                      </th>
                       <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-36">
-                        {t.storeTablePrice}
+                        {t.storeTableLineTotal}
                       </th>
                       <th className="w-12 px-1" aria-label={t.removeRowAria} />
                     </tr>
@@ -609,12 +654,30 @@ export default function RentalForm() {
                             }
                           />
                         </td>
+                        <td className="px-3 py-2 align-top text-center">
+                          <div className="flex justify-center">
+                            <StoreLineQuantityStepper
+                              value={row.quantity ?? 1}
+                              max={maxQuantityForPublicStoreRow(row, storeItems, productCatalog)}
+                              onChange={(next) =>
+                                setStoreItems((prev) => {
+                                  const updated = prev.map((r) =>
+                                    r.id === row.id ? { ...r, quantity: next } : r
+                                  );
+                                  return clampPublicStoreQuantities(updated, productCatalog);
+                                })
+                              }
+                              ariaLabel={t.storeTableQuantity}
+                            />
+                          </div>
+                        </td>
                         <td className="px-3 py-2 align-top">
                           <span className="inline-block py-2 text-sm tabular-nums text-gray-800 dark:text-slate-200">
                             {(() => {
                               const n = parseMoneyInput(row.price);
+                              const q = parseStoreLineQuantity(row) ?? 1;
                               return row.catalogProductId && Number.isFinite(n)
-                                ? `$${n.toFixed(2)}`
+                                ? `$${(n * q).toFixed(2)}`
                                 : '—';
                             })()}
                           </span>

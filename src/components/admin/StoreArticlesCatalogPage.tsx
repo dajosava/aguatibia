@@ -16,6 +16,14 @@ function parseUnitPrice(raw: string): number | null {
   return Math.round(n * 100) / 100;
 }
 
+function parseStockQuantity(raw: string): number | null {
+  const t = raw.replace(',', '.').trim();
+  if (t === '') return null;
+  const n = parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
 function formatError(err: unknown): string {
   if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === '23505') {
     return 'Ya existe un artículo con el mismo nombre (ignorando mayúsculas y espacios).';
@@ -30,10 +38,12 @@ export default function StoreArticlesCatalogPage() {
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [newStock, setNewStock] = useState('0');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<StoreProductRow | null>(null);
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
+  const [editStock, setEditStock] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -64,12 +74,18 @@ export default function StoreArticlesCatalogPage() {
       setError('Indica un precio válido (≥ 0).');
       return;
     }
+    const stock = parseStockQuantity(newStock);
+    if (stock === null) {
+      setError('Indica la cantidad en inventario (entero ≥ 0).');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await insertStoreProduct({ name, unit_price: unit });
+      await insertStoreProduct({ name, unit_price: unit, stock_quantity: stock });
       setNewName('');
       setNewPrice('');
+      setNewStock('');
       await load();
     } catch (err) {
       setError(formatError(err));
@@ -99,10 +115,15 @@ export default function StoreArticlesCatalogPage() {
       setError('Indica un precio válido (≥ 0).');
       return;
     }
+    const stock = parseStockQuantity(editStock);
+    if (stock === null) {
+      setError('Indica la cantidad en inventario (entero ≥ 0).');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      await updateStoreProduct(editing.id, { name, unit_price: unit });
+      await updateStoreProduct(editing.id, { name, unit_price: unit, stock_quantity: stock });
       closeEdit();
       await load();
     } catch (err) {
@@ -143,7 +164,9 @@ export default function StoreArticlesCatalogPage() {
             <p className="text-gray-600 dark:text-slate-400 mt-2">
               Catálogo que ve el cliente en el <strong className="text-gray-800 dark:text-slate-200">formulario de renta</strong>{' '}
               (productos opcionales del contrato). Solo los artículos dados de alta aquí aparecen en la lista;
-              el precio lo defines tú y en el formulario público no se puede cambiar.
+              el precio lo defines tú y en el formulario público no se puede cambiar. La{' '}
+              <strong className="text-gray-800 dark:text-slate-200">cantidad disponible</strong> baja automáticamente
+              cada vez que se añade una línea de venta a un acuerdo y sube si quitas esa línea o ajustas el stock aquí.
             </p>
           </div>
         </div>
@@ -153,7 +176,7 @@ export default function StoreArticlesCatalogPage() {
           className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8 mt-8"
         >
           <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">Nuevo artículo</h2>
-          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="form-label" htmlFor="store-art-name">
                 Nombre *
@@ -182,6 +205,21 @@ export default function StoreArticlesCatalogPage() {
                 autoComplete="off"
               />
             </div>
+            <div>
+              <label className="form-label" htmlFor="store-art-stock">
+                Cantidad disponible *
+              </label>
+              <input
+                id="store-art-stock"
+                type="text"
+                inputMode="numeric"
+                value={newStock}
+                onChange={(e) => setNewStock(e.target.value)}
+                className="form-input"
+                placeholder="0"
+                autoComplete="off"
+              />
+            </div>
           </div>
           <button
             type="submit"
@@ -205,7 +243,10 @@ export default function StoreArticlesCatalogPage() {
               <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Artículo</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-28">Precio</th>
+                  <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-24">Precio</th>
+                  <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-28">
+                    Disponible
+                  </th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-44">
                     Actualizado
                   </th>
@@ -215,7 +256,7 @@ export default function StoreArticlesCatalogPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
                       No hay artículos. Añade el primero arriba para que aparezca en el formulario público.
                     </td>
                   </tr>
@@ -225,6 +266,17 @@ export default function StoreArticlesCatalogPage() {
                       <td className="px-4 py-3 font-semibold text-gray-900 dark:text-slate-100">{row.name}</td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
                         ${Number(row.unit_price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        <span
+                          className={`inline-flex min-w-[2rem] justify-end font-semibold ${
+                            Number(row.stock_quantity ?? 0) <= 0
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-gray-900 dark:text-slate-100'
+                          }`}
+                        >
+                          {Number(row.stock_quantity ?? 0)}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-gray-600 dark:text-slate-400 text-xs">
                         {row.updated_at
@@ -285,7 +337,7 @@ export default function StoreArticlesCatalogPage() {
                   required
                 />
               </div>
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="form-label" htmlFor="edit-store-art-price">
                   Precio (USD) *
                 </label>
@@ -298,6 +350,23 @@ export default function StoreArticlesCatalogPage() {
                   className="form-input"
                   required
                 />
+              </div>
+              <div className="mb-6">
+                <label className="form-label" htmlFor="edit-store-art-stock">
+                  Cantidad disponible *
+                </label>
+                <input
+                  id="edit-store-art-stock"
+                  type="text"
+                  inputMode="numeric"
+                  value={editStock}
+                  onChange={(e) => setEditStock(e.target.value)}
+                  className="form-input"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
+                  Aumenta el número cuando repongas mercancía; las ventas en acuerdos restan unidades automáticamente.
+                </p>
               </div>
               <div className="flex gap-3 justify-end">
                 <button

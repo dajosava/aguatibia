@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, ArrowLeftRight, DoorOpen, Banknote } from 'lucide-react';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
+import StoreLineQuantityStepper from './StoreLineQuantityStepper';
 import { getRentalPriceForSelection } from '../config/rentalOptions';
 import {
   checkoutCloseRentalAgreement,
@@ -17,9 +18,11 @@ import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
+import { parseStoreLineQuantity } from '../utils/storeLineQuantity';
+import { clampEditStoreQuantities, maxQuantityForEditStoreRow } from '../utils/storeRowMaxQuantity';
 
 function newStoreLine(): StoreItemLine {
-  return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null };
+  return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null, quantity: 1 };
 }
 
 function parseMoneyInput(raw: string): number {
@@ -30,8 +33,57 @@ function parseMoneyInput(raw: string): number {
 }
 
 function collectStoreLines(
-  rows: StoreItemLine[]
+  rows: StoreItemLine[],
+  agreement: RentalAgreementWithStoreItems,
+  productCatalog: StoreProductRow[]
 ): { ok: true; lines: { product_name: string; unit_price: number }[] } | { ok: false; message: string } {
+  const byId = new Map(productCatalog.map((p) => [p.id, p]));
+  const agreementItems = agreement.rental_agreement_store_items ?? [];
+
+  function oldCountForProductName(nameNorm: string): number {
+    return agreementItems.filter((it) => it.product_name.trim().toLowerCase() === nameNorm).length;
+  }
+
+  const totalsByProductKey = new Map<string, number>();
+  for (const r of rows) {
+    const name = r.productName.trim();
+    const rawPrice = r.price.trim();
+    if (!name && !rawPrice) continue;
+    if (name && !rawPrice) {
+      return { ok: false, message: 'Indica el precio de cada producto de tienda o elimina la fila vacía.' };
+    }
+    if (!name && rawPrice) {
+      return { ok: false, message: 'Indica el nombre del producto o borra el precio en esa fila.' };
+    }
+    const qty = parseStoreLineQuantity(r);
+    if (qty === null) {
+      return { ok: false, message: 'Indica una cantidad válida (entero ≥ 1).' };
+    }
+    const cid = r.catalogProductId?.trim();
+    const key = cid
+      ? (byId.get(cid)?.name ?? name).trim().toLowerCase()
+      : name.trim().toLowerCase();
+    totalsByProductKey.set(key, (totalsByProductKey.get(key) ?? 0) + qty);
+  }
+
+  const checkedCatalogIds = new Set<string>();
+  for (const r of rows) {
+    const cid = r.catalogProductId?.trim();
+    if (!cid || checkedCatalogIds.has(cid)) continue;
+    checkedCatalogIds.add(cid);
+    const prod = byId.get(cid);
+    if (!prod) continue;
+    const key = prod.name.trim().toLowerCase();
+    const total = totalsByProductKey.get(key) ?? 0;
+    const available = Number(prod.stock_quantity ?? 0) + oldCountForProductName(key);
+    if (total > available) {
+      return {
+        ok: false,
+        message: `No hay suficiente stock de «${prod.name}». Disponible: ${available}.`,
+      };
+    }
+  }
+
   const lines: { product_name: string; unit_price: number }[] = [];
   for (const r of rows) {
     const name = r.productName.trim();
@@ -47,7 +99,13 @@ function collectStoreLines(
     if (Number.isNaN(p)) {
       return { ok: false, message: 'Revisa que los precios de tienda sean números válidos (ej. 10 o 10.50).' };
     }
-    lines.push({ product_name: name, unit_price: p });
+    const qty = parseStoreLineQuantity(r);
+    if (qty === null) {
+      return { ok: false, message: 'Indica una cantidad válida (entero ≥ 1).' };
+    }
+    for (let i = 0; i < qty; i++) {
+      lines.push({ product_name: name, unit_price: p });
+    }
   }
   return { ok: true, lines };
 }
@@ -120,14 +178,29 @@ export default function RentalAgreementEditModal({
     setBoardCheckedBy(agreement.board_checked_by ?? '');
     setCustomerNotes(agreement.customer_notes ?? '');
     const sorted = [...(agreement.rental_agreement_store_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
-    setStoreItems(
-      sorted.map((it) => ({
-        id: crypto.randomUUID(),
-        productName: it.product_name,
-        price: Number(it.unit_price).toFixed(2),
-        catalogProductId: null,
-      }))
-    );
+    const merged: StoreItemLine[] = [];
+    for (const it of sorted) {
+      const name = it.product_name.trim();
+      const price = Number(it.unit_price).toFixed(2);
+      const prod = productCatalog.find((c) => c.name.trim().toLowerCase() === name.toLowerCase());
+      const last = merged[merged.length - 1];
+      if (
+        last &&
+        last.productName.trim().toLowerCase() === name.toLowerCase() &&
+        last.price === price
+      ) {
+        last.quantity = (last.quantity ?? 1) + 1;
+      } else {
+        merged.push({
+          id: crypto.randomUUID(),
+          productName: name,
+          price,
+          catalogProductId: prod?.id ?? null,
+          quantity: 1,
+        });
+      }
+    }
+    setStoreItems(merged);
     setError(null);
     setShowSwapPanel(false);
     setSwapNewBoard('');
@@ -291,7 +364,7 @@ export default function RentalAgreementEditModal({
     setError(null);
     if (isClosed) return;
 
-    const storeResult = collectStoreLines(storeItems);
+    const storeResult = collectStoreLines(storeItems, agreement, productCatalog);
     if (!storeResult.ok) {
       setError(storeResult.message);
       return;
@@ -682,8 +755,14 @@ export default function RentalAgreementEditModal({
                     <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 min-w-[20rem]">
                       Producto
                     </th>
+                    <th className="text-center px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-24">
+                      Cant.
+                    </th>
                     <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-36">
-                      Precio (USD)
+                      Precio unit. (USD)
+                    </th>
+                    <th className="text-right px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-28">
+                      Importe
                     </th>
                     <th className="w-12 px-1" aria-label="Quitar fila" />
                   </tr>
@@ -700,6 +779,23 @@ export default function RentalAgreementEditModal({
                           }
                         />
                       </td>
+                      <td className="px-3 py-2 align-top text-center">
+                        <div className="flex justify-center">
+                          <StoreLineQuantityStepper
+                            value={row.quantity ?? 1}
+                            max={maxQuantityForEditStoreRow(row, storeItems, productCatalog, agreement)}
+                            onChange={(next) =>
+                              setStoreItems((prev) => {
+                                const updated = prev.map((r) =>
+                                  r.id === row.id ? { ...r, quantity: next } : r
+                                );
+                                return clampEditStoreQuantities(updated, productCatalog, agreement);
+                              })
+                            }
+                            ariaLabel="Cantidad"
+                          />
+                        </div>
+                      </td>
                       <td className="px-3 py-2 align-top">
                         <input
                           type="text"
@@ -713,6 +809,13 @@ export default function RentalAgreementEditModal({
                           className="form-input py-2 text-sm"
                           placeholder="0.00"
                         />
+                      </td>
+                      <td className="px-3 py-2 align-top text-right tabular-nums text-sm text-gray-800 dark:text-slate-200">
+                        {(() => {
+                          const u = parseMoneyInput(row.price.trim());
+                          const q = parseStoreLineQuantity(row) ?? 1;
+                          return Number.isFinite(u) ? `$${(u * q).toFixed(2)}` : '—';
+                        })()}
                       </td>
                       <td className="px-1 py-2 text-center">
                         <button

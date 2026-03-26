@@ -17,6 +17,8 @@ export interface StoreItemLine {
   price: string;
   /** Fila elegida desde catálogo (formulario público); el precio viene solo del catálogo. */
   catalogProductId?: string | null;
+  /** Unidades de esta línea (≥ 1). El padre muestra el selector y valida inventario. */
+  quantity?: number;
 }
 
 export type StoreProductLineCatalogUi = {
@@ -195,6 +197,7 @@ export default function StoreProductLineInput({
       productName: p.name,
       price: Number(p.unit_price).toFixed(2),
       catalogProductId: mode === 'catalog' ? p.id : null,
+      quantity: 1,
     });
     setOpen(false);
   };
@@ -210,7 +213,7 @@ export default function StoreProductLineInput({
         selectedCatalog &&
         value.trim().toLowerCase() !== selectedCatalog.name.trim().toLowerCase()
       ) {
-        onChange(row.id, { productName: value, catalogProductId: null, price: '' });
+        onChange(row.id, { productName: value, catalogProductId: null, price: '', quantity: 1 });
         return;
       }
     }

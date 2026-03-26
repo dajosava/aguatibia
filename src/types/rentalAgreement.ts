@@ -51,6 +51,8 @@ export interface RentalAgreementRow {
   rental_type: string;
   rental_duration: string;
   rental_price: number;
+  /** Descuento % solo sobre renta de tablas (0, 5, 10, 15 o 20); asignado desde el panel admin. */
+  rental_discount_percent?: number;
   payment_method: string;
   /** true cuando el personal registró el cobro desde el panel admin; el alta público deja false por defecto */
   contract_paid?: boolean;

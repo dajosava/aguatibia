@@ -67,6 +67,7 @@ export async function fetchRentalAgreements(): Promise<RentalAgreementWithStoreI
       rental_type,
       rental_duration,
       rental_price,
+      rental_discount_percent,
       payment_method,
       contract_paid,
       customer_notes,
@@ -287,6 +288,7 @@ export async function updateRentalAgreementWithStoreItems(
   agreementId: string,
   agreementPatch: {
     rental_price: number;
+    rental_discount_percent: number;
     board_checked_by: string | null;
     pickup: string | null;
     return_time: string | null;
@@ -317,6 +319,7 @@ export async function updateRentalAgreementWithStoreItems(
     .from('rental_agreements')
     .update({
       rental_price: agreementPatch.rental_price,
+      rental_discount_percent: agreementPatch.rental_discount_percent,
       board_checked_by: agreementPatch.board_checked_by,
       pickup: agreementPatch.pickup,
       return_time: agreementPatch.return_time,

@@ -73,6 +73,12 @@ function buildDocumentHtml(
     ? `<div class="row" style="grid-column:1/-1"><span class="label">Tabla revisada por</span><span>${escapeHtml(agreement.board_checked_by)}</span></div>`
     : '';
 
+  const disc = Number(agreement.rental_discount_percent ?? 0);
+  const discountLine =
+    [5, 10, 15, 20].includes(disc) && disc > 0
+      ? `<p class="muted">Descuento aplicado al subtotal de renta de tablas: <strong>${disc}%</strong> (los productos de tienda no tienen descuento).</p>`
+      : '';
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -133,6 +139,7 @@ function buildDocumentHtml(
     <div class="row"><span class="label">Estado del acuerdo</span><span>${escapeHtml(statusLabel)}</span></div>
     <div class="row"><span class="label">Aceptó términos</span><span>${agreement.agreed_to_terms ? 'Sí' : 'No'}</span></div>
   </div>
+  ${discountLine}
   <p class="totals">Precio total del contrato: $${Number(agreement.rental_price).toFixed(2)} USD</p>
 
   <h2>Productos de tienda</h2>

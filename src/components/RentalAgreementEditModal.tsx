@@ -21,6 +21,16 @@ import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 import { parseStoreLineQuantity } from '../utils/storeLineQuantity';
 import { clampEditStoreQuantities, maxQuantityForEditStoreRow } from '../utils/storeRowMaxQuantity';
 
+/** Descuento permitido solo sobre el subtotal de renta de tablas (no tienda). */
+const RENTAL_DISCOUNT_OPTIONS = [0, 5, 10, 15, 20] as const;
+
+function normalizeRentalDiscountPercent(raw: unknown): (typeof RENTAL_DISCOUNT_OPTIONS)[number] {
+  const v = Number(raw);
+  return (RENTAL_DISCOUNT_OPTIONS as readonly number[]).includes(v)
+    ? (v as (typeof RENTAL_DISCOUNT_OPTIONS)[number])
+    : 0;
+}
+
 function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null, quantity: 1 };
 }
@@ -169,6 +179,9 @@ export default function RentalAgreementEditModal({
   ]);
   const [customerNotes, setCustomerNotes] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
+  const [rentalDiscountPercent, setRentalDiscountPercent] = useState<
+    (typeof RENTAL_DISCOUNT_OPTIONS)[number]
+  >(0);
 
   const isClosed = agreement.status === 'cerrado';
 
@@ -201,6 +214,7 @@ export default function RentalAgreementEditModal({
       }
     }
     setStoreItems(merged);
+    setRentalDiscountPercent(normalizeRentalDiscountPercent(agreement.rental_discount_percent));
     setError(null);
     setShowSwapPanel(false);
     setSwapNewBoard('');
@@ -261,15 +275,20 @@ export default function RentalAgreementEditModal({
   const filledBoardCount = boardEditLines.filter((l) => l.boardNumber.trim().length > 0).length;
   const boardCountForRent =
     filledBoardCount > 0 ? filledBoardCount : Math.max(1, agreementBoards.length);
-  const rentalBase = rentalUnit * boardCountForRent;
+  const rentalSubtotalBeforeDiscount = rentalUnit * boardCountForRent;
+  const rentalDiscountAmount =
+    Math.round(rentalSubtotalBeforeDiscount * (rentalDiscountPercent / 100) * 100) / 100;
+  const rentalSubtotalAfterDiscount =
+    Math.round((rentalSubtotalBeforeDiscount - rentalDiscountAmount) * 100) / 100;
 
   const getStoreItemsSubtotal = () =>
     storeItems.reduce((sum, row) => {
       const p = parseMoneyInput(row.price.trim());
-      return sum + (Number.isFinite(p) ? p : 0);
+      const q = parseStoreLineQuantity(row) ?? 1;
+      return sum + (Number.isFinite(p) ? p * q : 0);
     }, 0);
 
-  const contractTotal = rentalBase + getStoreItemsSubtotal();
+  const contractTotal = rentalSubtotalAfterDiscount + getStoreItemsSubtotal();
 
   /** Valor en BD o registro reciente en esta sesión (evita UI bloqueada si el refresco no trae contract_paid). */
   const paymentRecordedAsPaid = agreement.contract_paid === true || paymentJustRegistered;
@@ -393,8 +412,10 @@ export default function RentalAgreementEditModal({
 
     const boardCount = nums.length;
     const rentalTotal = rentalUnit * boardCount;
+    const pct = normalizeRentalDiscountPercent(rentalDiscountPercent);
+    const discountedRental = Math.round(rentalTotal * (1 - pct / 100) * 100) / 100;
     const storeTotal = storeResult.lines.reduce((s, l) => s + l.unit_price, 0);
-    const nextRentalPrice = Math.round((rentalTotal + storeTotal) * 100) / 100;
+    const nextRentalPrice = Math.round((discountedRental + storeTotal) * 100) / 100;
 
     setSaving(true);
     try {
@@ -403,6 +424,7 @@ export default function RentalAgreementEditModal({
         agreement.id,
         {
           rental_price: nextRentalPrice,
+          rental_discount_percent: pct,
           board_checked_by: boardCheckedBy.trim() || null,
           pickup: pickup.trim() || null,
           return_time: returnTime.trim() || null,
@@ -841,6 +863,29 @@ export default function RentalAgreementEditModal({
               <Banknote className="w-4 h-4 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
               Estado del pago
             </h3>
+            <div className="rounded-lg border border-emerald-200/80 dark:border-emerald-800/40 bg-white/70 dark:bg-slate-900/50 p-3 space-y-2">
+              <label className="block text-sm font-medium text-gray-800 dark:text-slate-200" htmlFor="rental-discount-select">
+                Descuento sobre la renta de tablas
+              </label>
+              <select
+                id="rental-discount-select"
+                value={rentalDiscountPercent}
+                onChange={(e) =>
+                  setRentalDiscountPercent(normalizeRentalDiscountPercent(Number(e.target.value)))
+                }
+                className="form-input text-sm max-w-[14rem]"
+              >
+                {RENTAL_DISCOUNT_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt === 0 ? 'Sin descuento (0 %)' : `${opt} %`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 dark:text-slate-500 leading-relaxed">
+                Solo reduce el subtotal de renta (precio × tablas), no los productos de tienda. Se guarda con{' '}
+                <strong className="text-gray-800 dark:text-slate-300">Guardar cambios</strong> al pie del formulario.
+              </p>
+            </div>
             {paymentRecordedAsPaid ? (
               <p className="text-sm text-emerald-800 dark:text-emerald-200/90">
                 <strong>Pago registrado.</strong> Puedes usar check-out cuando el cliente devuelva la tabla.
@@ -899,9 +944,21 @@ export default function RentalAgreementEditModal({
             <span className="text-gray-600 dark:text-slate-400">
               Renta ({boardCountForRent} {boardCountForRent === 1 ? 'tabla' : 'tablas'}):{' '}
               <strong className="text-gray-900 dark:text-slate-100">
-                ${rentalUnit.toFixed(2)} × {boardCountForRent} = ${rentalBase.toFixed(2)}
+                ${rentalUnit.toFixed(2)} × {boardCountForRent} = ${rentalSubtotalBeforeDiscount.toFixed(2)}
               </strong>
             </span>
+            {rentalDiscountPercent > 0 && (
+              <span className="text-gray-600 dark:text-slate-400">
+                Descuento ({rentalDiscountPercent}%):{' '}
+                <strong className="text-amber-700 dark:text-amber-400">−${rentalDiscountAmount.toFixed(2)}</strong>
+              </span>
+            )}
+            {rentalDiscountPercent > 0 && (
+              <span className="text-gray-600 dark:text-slate-400">
+                Renta tras descuento:{' '}
+                <strong className="text-gray-900 dark:text-slate-100">${rentalSubtotalAfterDiscount.toFixed(2)}</strong>
+              </span>
+            )}
             {getStoreItemsSubtotal() > 0 && (
               <span className="text-gray-600 dark:text-slate-400">
                 Tienda:{' '}

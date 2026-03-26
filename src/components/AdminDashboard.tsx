@@ -614,9 +614,25 @@ export default function AdminDashboard() {
 
                   <div>
                     <div className="text-sm text-gray-500 dark:text-slate-500">Precio Total</div>
-                    <div className="text-3xl font-bold text-green-600 dark:text-emerald-400">
-                      ${Number(selectedAgreement.rental_price).toFixed(2)}
-                    </div>
+                    {(() => {
+                      const d = Number(selectedAgreement.rental_discount_percent ?? 0);
+                      const showDisc = [5, 10, 15, 20].includes(d);
+                      return (
+                        <>
+                          {showDisc && (
+                            <div className="text-sm font-medium text-amber-700 dark:text-amber-400/90 mt-0.5">
+                              Descuento sobre renta de tablas: {d}%
+                            </div>
+                          )}
+                          <div className="text-3xl font-bold text-green-600 dark:text-emerald-400">
+                            ${Number(selectedAgreement.rental_price).toFixed(2)}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
+                            Total con renta (tras descuento si aplica) y productos de tienda.
+                          </p>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div>

@@ -17,6 +17,7 @@ export default function RentalArticlesInventoryPage() {
   const [newName, setNewName] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newUnitPrice, setNewUnitPrice] = useState('0');
   const [newStock, setNewStock] = useState('1');
   const [newSort, setNewSort] = useState('0');
   const [saving, setSaving] = useState(false);
@@ -24,6 +25,7 @@ export default function RentalArticlesInventoryPage() {
   const [editName, setEditName] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editUnitPrice, setEditUnitPrice] = useState('0');
   const [editStock, setEditStock] = useState('1');
   const [editSort, setEditSort] = useState('0');
 
@@ -50,11 +52,24 @@ export default function RentalArticlesInventoryPage() {
     return n;
   };
 
+  const parseUnitPrice = (raw: string): number | null => {
+    const t = raw.replace(',', '.').trim();
+    if (t === '') return null;
+    const n = parseFloat(t);
+    if (!Number.isFinite(n) || n < 0) return null;
+    return Math.round(n * 100) / 100;
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = newName.trim();
     if (!name) {
       setError('Indica el nombre del artículo.');
+      return;
+    }
+    const unitPrice = parseUnitPrice(newUnitPrice);
+    if (unitPrice === null) {
+      setError('Indica un precio de renta válido (≥ 0).');
       return;
     }
     const stock = parseStock(newStock);
@@ -70,12 +85,14 @@ export default function RentalArticlesInventoryPage() {
         name,
         category: newCategory.trim() || null,
         description: newDesc.trim() || null,
+        unit_price: unitPrice,
         stock_quantity: stock,
         sort_order: Number.isFinite(sort) ? sort : 0,
       });
       setNewName('');
       setNewCategory('');
       setNewDesc('');
+      setNewUnitPrice('0');
       setNewStock('1');
       setNewSort('0');
       await load();
@@ -91,6 +108,7 @@ export default function RentalArticlesInventoryPage() {
     setEditName(row.name);
     setEditCategory(row.category ?? '');
     setEditDesc(row.description ?? '');
+    setEditUnitPrice(Number(row.unit_price ?? 0).toFixed(2));
     setEditStock(String(row.stock_quantity));
     setEditSort(String(row.sort_order));
   };
@@ -103,6 +121,11 @@ export default function RentalArticlesInventoryPage() {
     const name = editName.trim();
     if (!name) {
       setError('El nombre no puede estar vacío.');
+      return;
+    }
+    const unitPrice = parseUnitPrice(editUnitPrice);
+    if (unitPrice === null) {
+      setError('Indica un precio de renta válido (≥ 0).');
       return;
     }
     const stock = parseStock(editStock);
@@ -118,6 +141,7 @@ export default function RentalArticlesInventoryPage() {
         name,
         category: editCategory.trim() || null,
         description: editDesc.trim() || null,
+        unit_price: unitPrice,
         stock_quantity: stock,
         sort_order: Number.isFinite(sort) ? sort : 0,
       });
@@ -163,8 +187,8 @@ export default function RentalArticlesInventoryPage() {
             <p className="text-gray-600 dark:text-slate-400 mt-2">
               Inventario de complementos para la playa o la escuela: <strong className="text-gray-800 dark:text-slate-200">sombrillas</strong>,{' '}
               <strong className="text-gray-800 dark:text-slate-200">sillas</strong>,{' '}
-              <strong className="text-gray-800 dark:text-slate-200">toldos</strong>, etc. (no son tablas de surf). El
-              stock es orientativo para el equipo; más adelante se puede enlazar con contratos si lo necesitáis.
+              <strong className="text-gray-800 dark:text-slate-200">toldos</strong>, etc. (no son tablas de surf).
+              El <strong className="text-gray-800 dark:text-slate-200">precio de renta</strong> es referencia en USD para el equipo; el stock es orientativo. Más adelante se puede enlazar con contratos si lo necesitáis.
             </p>
           </div>
         </div>
@@ -198,6 +222,21 @@ export default function RentalArticlesInventoryPage() {
                 onChange={(e) => setNewCategory(e.target.value)}
                 className="form-input"
                 placeholder={CATEGORY_PLACEHOLDER}
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label className="form-label" htmlFor="art-price">
+                Precio de renta (USD) *
+              </label>
+              <input
+                id="art-price"
+                type="text"
+                inputMode="decimal"
+                value={newUnitPrice}
+                onChange={(e) => setNewUnitPrice(e.target.value)}
+                className="form-input"
+                placeholder="0.00"
                 autoComplete="off"
               />
             </div>
@@ -266,6 +305,9 @@ export default function RentalArticlesInventoryPage() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-14">Orden</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nombre</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Categoría</th>
+                  <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-28">
+                    Precio (USD)
+                  </th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-24">Stock</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Notas</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-32">Acciones</th>
@@ -274,7 +316,7 @@ export default function RentalArticlesInventoryPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
                       No hay artículos. Añade el primero arriba.
                     </td>
                   </tr>
@@ -285,6 +327,9 @@ export default function RentalArticlesInventoryPage() {
                       <td className="px-4 py-3 font-semibold text-gray-900 dark:text-slate-100">{row.name}</td>
                       <td className="px-4 py-3 text-gray-700 dark:text-slate-300">
                         {(row.category ?? '').trim() || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold tabular-nums text-green-700 dark:text-emerald-400">
+                        ${Number(row.unit_price ?? 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-amber-700 dark:text-amber-400">
                         {row.stock_quantity}
@@ -353,6 +398,20 @@ export default function RentalArticlesInventoryPage() {
                   onChange={(e) => setEditCategory(e.target.value)}
                   className="form-input"
                   placeholder={CATEGORY_PLACEHOLDER}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="form-label" htmlFor="edit-art-price">
+                  Precio de renta (USD) *
+                </label>
+                <input
+                  id="edit-art-price"
+                  type="text"
+                  inputMode="decimal"
+                  value={editUnitPrice}
+                  onChange={(e) => setEditUnitPrice(e.target.value)}
+                  className="form-input"
+                  required
                 />
               </div>
               <div className="mb-4 grid grid-cols-2 gap-4">

@@ -10,6 +10,7 @@ import type { AdminSection } from './components/admin/AdminLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LayoutDashboard, FileText } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
+import HeaderTideStatus from './components/HeaderTideStatus';
 
 function AppContent() {
   const { session, loading } = useAuth();
@@ -21,9 +22,18 @@ function AppContent() {
       <nav className="bg-white shadow-md border-b-2 border-blue-100 dark:bg-slate-900 dark:border-slate-700 dark:shadow-slate-950/50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/agtlogo.png" alt="Agua Tibia" className="h-[4.5rem] sm:h-24 w-auto max-w-[min(100%,380px)] object-contain" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Agua Tibia Surf School</h1>
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <img
+                src="/agtlogo.png"
+                alt="Agua Tibia"
+                className="h-[4.5rem] sm:h-24 w-auto max-w-[min(100%,380px)] object-contain shrink-0"
+              />
+              <div className="min-w-0 pt-0.5">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                  Agua Tibia Surf School
+                </h1>
+                <HeaderTideStatus />
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
               <ThemeToggle />

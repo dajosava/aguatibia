@@ -84,18 +84,22 @@ export type RentalFormStrings = {
 
 const rentalOptionLabelsEn: Record<string, string> = {
   surfboard_sesh: 'Surfboard Session (3hrs)',
+  boogie_sesh: 'Boogie Session (3hrs)',
   regular_full_day: 'Regular Surfboard Full Day',
   premium_full_day: 'Premium Surfboard Full Day',
-  bodyboard_extra: 'Bodyboard Extra Day',
+  bodyboard_extra: 'Surfboard Regular Extra Day',
+  premium_extra_day: 'Premium Surfboard Extra Day',
   regular_week: 'Regular Surfboard Week',
   premium_week: 'Premium Surfboard Week',
 };
 
 const rentalOptionLabelsEs: Record<string, string> = {
   surfboard_sesh: 'Sesión de surf (3 h)',
+  boogie_sesh: 'Sesión boogie (3 h)',
   regular_full_day: 'Tabla regular — día completo',
   premium_full_day: 'Tabla premium — día completo',
-  bodyboard_extra: 'Bodyboard — día extra',
+  bodyboard_extra: 'Tabla regular — día extra',
+  premium_extra_day: 'Tabla premium — día extra',
   regular_week: 'Tabla regular — semana',
   premium_week: 'Tabla premium — semana',
 };

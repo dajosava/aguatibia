@@ -536,22 +536,24 @@ export default function RentalForm() {
 
           <div>
             <p className="form-label mb-4">{t.rentalOptionsSection}</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
               {RENTAL_OPTIONS.map((option) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => handleRentalSelect(option)}
-                  className={`p-4 border-2 rounded-lg text-left transition ${
+                  className={`h-full min-h-[7.5rem] flex flex-col p-4 border-2 rounded-lg text-left transition ${
                     formData.rental_type === option.type && formData.rental_duration === option.duration
                       ? 'border-blue-500 bg-blue-50 shadow-md dark:border-cyan-500 dark:bg-slate-800/80'
                       : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 dark:border-slate-600 dark:hover:border-cyan-600 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="font-semibold text-gray-800 dark:text-slate-100">
+                  <span className="font-semibold text-gray-800 dark:text-slate-100 leading-snug flex-1">
                     {t.rentalOptionLabels[option.id] ?? option.label}
-                  </div>
-                  <div className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-2">${option.price}</div>
+                  </span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-3 shrink-0">
+                    ${option.price}
+                  </span>
                 </button>
               ))}
             </div>

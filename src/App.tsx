@@ -6,6 +6,7 @@ import AdminLayout from './components/admin/AdminLayout';
 import SurfboardInventoryPage from './components/admin/SurfboardInventoryPage';
 import StoreArticlesCatalogPage from './components/admin/StoreArticlesCatalogPage';
 import RentalArticlesInventoryPage from './components/admin/RentalArticlesInventoryPage';
+import AdminMetricsPage from './components/admin/AdminMetricsPage';
 import type { AdminSection } from './components/admin/AdminLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FileText } from 'lucide-react';
@@ -67,6 +68,8 @@ function AppContent() {
           <AdminLayout active={adminSection} onNavigate={setAdminSection}>
             {adminSection === 'contracts' ? (
               <AdminDashboard />
+            ) : adminSection === 'metrics' ? (
+              <AdminMetricsPage />
             ) : adminSection === 'inventory' ? (
               <SurfboardInventoryPage />
             ) : adminSection === 'storeArticles' ? (

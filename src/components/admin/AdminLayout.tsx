@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react';
-import { Armchair, LayoutDashboard, LogOut, ShoppingBag, Waves } from 'lucide-react';
+import { Armchair, BarChart3, LayoutDashboard, LogOut, ShoppingBag, User, Waves } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type AdminSection = 'contracts' | 'inventory' | 'storeArticles' | 'rentalArticles';
+export type AdminSection =
+  | 'contracts'
+  | 'inventory'
+  | 'storeArticles'
+  | 'rentalArticles'
+  | 'metrics';
 
 type Props = {
   active: AdminSection;
@@ -13,20 +18,36 @@ type Props = {
 const nav: {
   id: AdminSection;
   label: string;
-  icon: typeof LayoutDashboard | typeof Waves | typeof Armchair | typeof ShoppingBag;
+  icon: typeof LayoutDashboard | typeof Waves | typeof Armchair | typeof ShoppingBag | typeof BarChart3;
 }[] = [
   { id: 'contracts', label: 'Acuerdos de renta', icon: LayoutDashboard },
+  { id: 'metrics', label: 'Métricas', icon: BarChart3 },
   { id: 'inventory', label: 'Inventario de tablas', icon: Waves },
   { id: 'storeArticles', label: 'Artículos de tienda', icon: ShoppingBag },
   { id: 'rentalArticles', label: 'Artículos de renta', icon: Armchair },
 ];
 
 export default function AdminLayout({ active, onNavigate, children }: Props) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const email = user?.email ?? '';
+  const fullName =
+    typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name.trim() : '';
+  const sessionTooltip = [fullName, email].filter(Boolean).join(' · ') || undefined;
 
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)] bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
-      <aside className="shrink-0 w-full md:w-56 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 md:min-h-[calc(100vh-5rem)] flex flex-col">
+    <div className="flex flex-col min-h-[calc(100vh-5rem)] bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+      <header className="flex items-center justify-end gap-2 px-4 py-2.5 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 shrink-0">
+        <User className="w-4 h-4 text-gray-500 dark:text-slate-500 shrink-0" aria-hidden />
+        <span
+          className="text-sm font-medium text-gray-800 dark:text-slate-100 truncate max-w-[min(100vw-8rem,320px)] sm:max-w-md"
+          title={sessionTooltip}
+        >
+          {email || '—'}
+        </span>
+      </header>
+
+      <div className="flex flex-col md:flex-row flex-1 min-h-0">
+      <aside className="shrink-0 w-full md:w-56 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 md:min-h-0 flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Panel</p>
           <p className="font-bold text-gray-900 dark:text-slate-100 mt-1">Agua Tibia</p>
@@ -65,6 +86,7 @@ export default function AdminLayout({ active, onNavigate, children }: Props) {
       </aside>
 
       <div className="flex-1 min-w-0 overflow-x-auto">{children}</div>
+      </div>
     </div>
   );
 }

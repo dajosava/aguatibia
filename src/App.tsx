@@ -9,10 +9,81 @@ import RentalArticlesInventoryPage from './components/admin/RentalArticlesInvent
 import AdminMetricsPage from './components/admin/AdminMetricsPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PublicFormLangProvider, usePublicFormLang } from './contexts/PublicFormLangContext';
+import type { FormPageFooterStrings } from './config/rentalFormLocales';
 import { FORM_PAGE_FOOTER_STRINGS } from './config/rentalFormLocales';
-import { FileText, MapPin, Phone } from 'lucide-react';
+import { FileText, Mail, MapPin, Phone } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 import HeaderTideStatus from './components/HeaderTideStatus';
+
+function FooterAguaTibiaContact({ formFooter }: { formFooter: FormPageFooterStrings }) {
+  return (
+    <div className="max-w-3xl mx-auto mb-6 text-left">
+      <div className="rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50/80 dark:bg-slate-800/40 p-4 sm:p-5 space-y-4 shadow-sm">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+          {formFooter.contactCardTitle}
+        </h2>
+        <ul className="space-y-4 text-sm text-gray-700 dark:text-slate-300">
+          <li className="flex gap-3">
+            <Phone
+              className="w-5 h-5 shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5"
+              aria-hidden
+            />
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500">
+                {formFooter.phoneLabel}
+              </div>
+              <div className="mt-1 flex flex-col gap-1.5">
+                <a
+                  href="tel:+50685834946"
+                  className="inline-block font-medium text-blue-700 hover:text-blue-900 dark:text-cyan-300 dark:hover:text-cyan-200 underline-offset-2 hover:underline"
+                >
+                  (+506) 8583 4946
+                </a>
+                <a
+                  href="tel:+50626825508"
+                  className="inline-block font-medium text-blue-700 hover:text-blue-900 dark:text-cyan-300 dark:hover:text-cyan-200 underline-offset-2 hover:underline"
+                >
+                  (+506) 2682 5508
+                </a>
+              </div>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <Mail
+              className="w-5 h-5 shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5"
+              aria-hidden
+            />
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500">
+                {formFooter.emailLabel}
+              </div>
+              <a
+                href="mailto:info@aguatibia.com"
+                className="mt-1 inline-block font-medium text-blue-700 hover:text-blue-900 dark:text-cyan-300 dark:hover:text-cyan-200 underline-offset-2 hover:underline"
+              >
+                info@aguatibia.com
+              </a>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <MapPin
+              className="w-5 h-5 shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5"
+              aria-hidden
+            />
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500">
+                {formFooter.addressLabel}
+              </div>
+              <p className="mt-1 leading-relaxed text-gray-800 dark:text-slate-200">
+                {formFooter.contactAddress}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 function RootLayout() {
   const location = useLocation();
@@ -68,66 +139,27 @@ function RootLayout() {
 
       <footer className="bg-white border-t border-gray-200 py-6 mt-12 dark:bg-slate-900 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
-          {isFormPage && (
-            <div className="max-w-3xl mx-auto mb-8 text-left space-y-6">
-              <div className="rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50/80 dark:bg-slate-800/40 p-4 sm:p-5 space-y-4 shadow-sm">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                  {formFooter.contactCardTitle}
-                </h2>
-                <ul className="space-y-4 text-sm text-gray-700 dark:text-slate-300">
-                  <li className="flex gap-3">
-                    <Phone
-                      className="w-5 h-5 shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5"
-                      aria-hidden
-                    />
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500">
-                        {formFooter.phoneLabel}
-                      </div>
-                      <a
-                        href="tel:+50626825508"
-                        className="mt-1 inline-block font-medium text-blue-700 hover:text-blue-900 dark:text-cyan-300 dark:hover:text-cyan-200 underline-offset-2 hover:underline"
-                      >
-                        +506 2682 5508
-                      </a>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <MapPin
-                      className="w-5 h-5 shrink-0 text-blue-600 dark:text-cyan-400 mt-0.5"
-                      aria-hidden
-                    />
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500">
-                        {formFooter.addressLabel}
-                      </div>
-                      <p className="mt-1 leading-relaxed text-gray-800 dark:text-slate-200">
-                        K section, 100 meters south from Hotel Olas Verdes, Provincia de Guanacaste,
-                        Guiones, 50206
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                  {formFooter.mapHeading}
-                </h3>
-                <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 shadow-sm aspect-[4/3] max-h-[min(28rem,70vh)] sm:aspect-video">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3929.95741010687!2d-85.66641152424887!3d9.937501790164752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f9e543fdd52643d%3A0x1df084268dce53fd!2sAgua%20Tibia%20Surf%20School!5e0!3m2!1ses!2scr!4v1774557467869!5m2!1ses!2scr"
-                    className="absolute inset-0 h-full w-full"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title={formFooter.mapIframeTitle}
-                  />
-                </div>
+          {isFormPage ? (
+            <div className="max-w-3xl mx-auto mb-8 text-left space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+                {formFooter.mapHeading}
+              </h3>
+              <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 shadow-sm aspect-[4/3] max-h-[min(28rem,70vh)] sm:aspect-video">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3929.95741010687!2d-85.66641152424887!3d9.937501790164752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f9e543fdd52643d%3A0x1df084268dce53fd!2sAgua%20Tibia%20Surf%20School!5e0!3m2!1ses!2scr!4v1774557467869!5m2!1ses!2scr"
+                  className="absolute inset-0 h-full w-full"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title={formFooter.mapIframeTitle}
+                />
               </div>
             </div>
-          )}
+          ) : null}
+
+          <FooterAguaTibiaContact formFooter={formFooter} />
+
           <p className="text-gray-600 text-sm dark:text-slate-400">
             Developed by{' '}
             <a

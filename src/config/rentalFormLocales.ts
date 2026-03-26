@@ -326,7 +326,9 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
 export type FormPageFooterStrings = {
   contactCardTitle: string;
   phoneLabel: string;
+  emailLabel: string;
   addressLabel: string;
+  contactAddress: string;
   mapHeading: string;
   mapIframeTitle: string;
 };
@@ -335,14 +337,20 @@ export const FORM_PAGE_FOOTER_STRINGS: Record<RentalFormLang, FormPageFooterStri
   en: {
     contactCardTitle: 'Agua Tibia Surf School',
     phoneLabel: 'Phone',
+    emailLabel: 'Email',
     addressLabel: 'Address',
+    contactAddress:
+      '75 meters southeast of Hotel Olas Verdes, next to Nosara Beach Hostel, Playa Guiones, Nosara, Guanacaste, Costa Rica.',
     mapHeading: 'Directions — map',
     mapIframeTitle: 'Agua Tibia Surf School location on Google Maps',
   },
   es: {
     contactCardTitle: 'Agua Tibia Surf School',
     phoneLabel: 'Teléfono',
+    emailLabel: 'Correo',
     addressLabel: 'Dirección',
+    contactAddress:
+      '75 metros sureste de Hotel Olas Verdes, contiguo a Nosara Beach hostel, Playa Guiones, Nosara, Guanacaste, Costa Rica.',
     mapHeading: 'Cómo llegar — mapa',
     mapIframeTitle: 'Ubicación de Agua Tibia Surf School en Google Maps',
   },

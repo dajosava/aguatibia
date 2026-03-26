@@ -14,6 +14,7 @@ import { FORM_PAGE_FOOTER_STRINGS } from './config/rentalFormLocales';
 import { FileText, Mail, MapPin, Phone } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 import HeaderTideStatus from './components/HeaderTideStatus';
+import { useCostaRicaClock } from './hooks/useCostaRicaClock';
 
 function FooterAguaTibiaContact({ formFooter }: { formFooter: FormPageFooterStrings }) {
   return (
@@ -85,6 +86,34 @@ function FooterAguaTibiaContact({ formFooter }: { formFooter: FormPageFooterStri
   );
 }
 
+function AdminFooterMinimal() {
+  const { now, label } = useCostaRicaClock();
+
+  return (
+    <footer className="bg-white border-t border-gray-200 py-4 mt-12 dark:bg-slate-900 dark:border-slate-700">
+      <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-center text-sm text-gray-600 dark:text-slate-400">
+        <time dateTime={now.toISOString()} className="tabular-nums">
+          {label}
+        </time>
+        <span className="hidden sm:inline text-gray-300 dark:text-slate-600" aria-hidden>
+          ·
+        </span>
+        <p>
+          Developed by{' '}
+          <a
+            href="https://davidsalazarvalverde.netlify.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 font-medium transition dark:text-cyan-400 dark:hover:text-cyan-300"
+          >
+            David Salazar V
+          </a>
+        </p>
+      </div>
+    </footer>
+  );
+}
+
 function RootLayout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
@@ -137,59 +166,54 @@ function RootLayout() {
         <Outlet />
       </main>
 
-      <footer className="bg-white border-t border-gray-200 py-6 mt-12 dark:bg-slate-900 dark:border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
-          {isFormPage ? (
-            <div className="max-w-3xl mx-auto mb-8 text-left space-y-3">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                {formFooter.mapHeading}
-              </h3>
-              <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 shadow-sm aspect-[4/3] max-h-[min(28rem,70vh)] sm:aspect-video">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3929.95741010687!2d-85.66641152424887!3d9.937501790164752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f9e543fdd52643d%3A0x1df084268dce53fd!2sAgua%20Tibia%20Surf%20School!5e0!3m2!1ses!2scr!4v1774557467869!5m2!1ses!2scr"
-                  className="absolute inset-0 h-full w-full"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title={formFooter.mapIframeTitle}
-                />
+      {isAdminRoute ? (
+        <AdminFooterMinimal />
+      ) : (
+        <footer className="bg-white border-t border-gray-200 py-6 mt-12 dark:bg-slate-900 dark:border-slate-700">
+          <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
+            {isFormPage ? (
+              <div className="max-w-3xl mx-auto mb-8 text-left space-y-3">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+                  {formFooter.mapHeading}
+                </h3>
+                <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 shadow-sm aspect-[4/3] max-h-[min(28rem,70vh)] sm:aspect-video">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3929.95741010687!2d-85.66641152424887!3d9.937501790164752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f9e543fdd52643d%3A0x1df084268dce53fd!2sAgua%20Tibia%20Surf%20School!5e0!3m2!1ses!2scr!4v1774557467869!5m2!1ses!2scr"
+                    className="absolute inset-0 h-full w-full"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title={formFooter.mapIframeTitle}
+                  />
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          <FooterAguaTibiaContact formFooter={formFooter} />
+            <FooterAguaTibiaContact formFooter={formFooter} />
 
-          <p className="text-gray-600 text-sm dark:text-slate-400">
-            Developed by{' '}
-            <a
-              href="https://davidsalazarvalverde.netlify.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 font-medium transition dark:text-cyan-400 dark:hover:text-cyan-300"
-            >
-              David Salazar V
-            </a>
-          </p>
-          <div>
-            {isAdminRoute ? (
-              <Link
-                to="/"
-                className="text-xs text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
+            <p className="text-gray-600 text-sm dark:text-slate-400">
+              Developed by{' '}
+              <a
+                href="https://davidsalazarvalverde.netlify.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 font-medium transition dark:text-cyan-400 dark:hover:text-cyan-300"
               >
-                Ir al formulario público
-              </Link>
-            ) : (
+                David Salazar V
+              </a>
+            </p>
+            <div>
               <Link
                 to="/admin"
                 className="text-xs text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
               >
                 Admin panel
               </Link>
-            )}
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

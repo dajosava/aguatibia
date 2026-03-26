@@ -1,6 +1,9 @@
 import { getTideCoordinates, TIDE_DISPLAY_TIMEZONE, todayYyyyMmDdInTimezone } from '../lib/tideConfig';
 
+export type TideTrend = 'rising' | 'falling' | 'steady';
+
 export type TideDaySummary = {
+  trend: TideTrend;
   trendLabel: string;
   detailLine: string;
 };
@@ -150,5 +153,5 @@ export async function fetchTodayTideSummary(): Promise<TideDaySummary> {
       ? `${nextEvents.join(' · ')} · ${spanLine}`
       : `${spanLine}`;
 
-  return { trendLabel, detailLine };
+  return { trend, trendLabel, detailLine };
 }

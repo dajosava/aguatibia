@@ -19,6 +19,9 @@ import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 import { printRentalAgreement } from '../utils/rentalAgreementPrint';
 
+/** Filtro del listado al pulsar las tarjetas de resumen */
+type AgreementsStatsFilter = 'all' | 'ongoing' | 'overdue' | 'closed';
+
 export default function AdminDashboard() {
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
   const [surfboards, setSurfboards] = useState<SurfboardInventoryRow[]>([]);
@@ -29,6 +32,7 @@ export default function AdminDashboard() {
   const [editingAgreement, setEditingAgreement] = useState<RentalAgreementWithStoreItems | null>(null);
   const [productCatalog, setProductCatalog] = useState<StoreProductRow[]>([]);
   const [contractPaidUpdating, setContractPaidUpdating] = useState(false);
+  const [statsFilter, setStatsFilter] = useState<AgreementsStatsFilter>('all');
 
   const surfboardByNumber = useMemo(() => {
     const m = new Map<string, SurfboardInventoryRow>();
@@ -139,6 +143,23 @@ export default function AdminDashboard() {
     );
   });
 
+  const filteredByStats = useMemo(() => {
+    switch (statsFilter) {
+      case 'ongoing':
+        return filteredAgreements.filter((a) => isRentalOngoing(a));
+      case 'overdue':
+        return filteredAgreements.filter((a) => isReturnInPast(a));
+      case 'closed':
+        return filteredAgreements.filter((a) => a.status === 'cerrado');
+      default:
+        return filteredAgreements;
+    }
+  }, [filteredAgreements, statsFilter]);
+
+  const toggleStatsFilter = (next: AgreementsStatsFilter) => {
+    setStatsFilter((prev) => (prev === next ? 'all' : next));
+  };
+
   /**
    * 1) Pendiente de retirar
    * 2) Vencidos
@@ -147,24 +168,30 @@ export default function AdminDashboard() {
    * Dentro de cada grupo: más recientes arriba.
    */
   const displayAgreements = useMemo(() => {
-    const groupRank = (a: (typeof filteredAgreements)[number]) => {
+    const groupRank = (a: (typeof filteredByStats)[number]) => {
       if (a.status === 'cerrado') return 3;
       if (isPendingPickup(a)) return 0;
       if (isReturnInPast(a)) return 1;
       return 2;
     };
-    const sortKeyMs = (a: (typeof filteredAgreements)[number]) => {
+    const sortKeyMs = (a: (typeof filteredByStats)[number]) => {
       const ret = parseDateTimeMs(a.return_time);
       if (ret !== null) return ret;
       return new Date(a.created_at).getTime();
     };
-    return [...filteredAgreements].sort((a, b) => {
+    return [...filteredByStats].sort((a, b) => {
       const ga = groupRank(a);
       const gb = groupRank(b);
       if (ga !== gb) return ga - gb;
       return sortKeyMs(b) - sortKeyMs(a);
     });
-  }, [filteredAgreements]);
+  }, [filteredByStats]);
+
+  const statCardRing = (active: boolean) =>
+    active ? 'ring-2 ring-white ring-offset-2 ring-offset-white/10 dark:ring-offset-slate-900/80 shadow-lg scale-[1.02]' : '';
+
+  const statCardBase =
+    'text-left rounded-xl shadow-md p-6 transition transform cursor-pointer hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-300 dark:focus-visible:ring-cyan-600';
 
   const formatDateTime = (value: string | null | undefined) => {
     const ms = parseDateTimeMs(value ?? null);
@@ -203,6 +230,11 @@ export default function AdminDashboard() {
 
   const selectedDetailBoards = selectedAgreement ? getAgreementBoardNumbers(selectedAgreement) : [];
 
+  const agreementsTableScrollClass =
+    displayAgreements.length > 10
+      ? 'max-h-[min(70vh,40rem)] overflow-x-auto overflow-y-auto overscroll-y-contain'
+      : 'overflow-x-auto';
+
   return (
     <div className="text-gray-900 dark:text-slate-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -224,35 +256,55 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-md">
+            <button
+              type="button"
+              onClick={() => toggleStatsFilter('all')}
+              title="Mostrar todos los acuerdos"
+              className={`${statCardBase} bg-gradient-to-br from-blue-500 to-blue-600 text-white ${statCardRing(statsFilter === 'all')}`}
+            >
               <div className="text-3xl font-bold">{agreements.length}</div>
               <div className="text-blue-100 mt-1">Total Acuerdos</div>
-            </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-md">
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleStatsFilter('ongoing')}
+              title="Filtrar solo activos en plazo"
+              className={`${statCardBase} bg-gradient-to-br from-green-500 to-green-600 text-white ${statCardRing(statsFilter === 'ongoing')}`}
+            >
               <div className="text-3xl font-bold">
                 {agreements.filter((a) => isRentalOngoing(a)).length}
               </div>
               <div className="text-green-100 mt-1">Activos (en plazo)</div>
-            </div>
-            <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-xl shadow-md">
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleStatsFilter('overdue')}
+              title="Filtrar solo vencidos (fecha de retorno pasada)"
+              className={`${statCardBase} bg-gradient-to-br from-red-500 to-red-600 text-white ${statCardRing(statsFilter === 'overdue')}`}
+            >
               <div className="text-3xl font-bold">
                 {agreements.filter((a) => isReturnInPast(a)).length}
               </div>
               <div className="text-red-100 mt-1">Vencidos</div>
-            </div>
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-md">
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleStatsFilter('closed')}
+              title="Filtrar solo acuerdos cerrados (check-out completado)"
+              className={`${statCardBase} bg-gradient-to-br from-purple-500 to-purple-600 text-white ${statCardRing(statsFilter === 'closed')}`}
+            >
               <div className="text-3xl font-bold">
-                ${agreements.reduce((sum, a) => sum + Number(a.rental_price), 0).toFixed(2)}
+                {agreements.filter((a) => a.status === 'cerrado').length}
               </div>
-              <div className="text-purple-100 mt-1">Ingresos Totales</div>
-            </div>
+              <div className="text-purple-100 mt-1">Cerrados</div>
+            </button>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900/90 dark:border dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-slate-800/80 border-b-2 border-gray-200 dark:border-slate-600">
+          <div className={agreementsTableScrollClass}>
+            <table className="w-full min-w-[56rem]">
+              <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/80 border-b-2 border-gray-200 dark:border-slate-600">
                 <tr>
                   <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider w-24">
                     N.º form.

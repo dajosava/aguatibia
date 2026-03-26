@@ -7,8 +7,9 @@ import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import StoreLineQuantityStepper from './StoreLineQuantityStepper';
 import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
-import type { RentalFormLang, RentalFormValidationMessages } from '../config/rentalFormLocales';
+import type { RentalFormValidationMessages } from '../config/rentalFormLocales';
 import { RENTAL_FORM_STRINGS } from '../config/rentalFormLocales';
+import { usePublicFormLang } from '../contexts/PublicFormLangContext';
 import { insertRentalAgreementWithStoreItems } from '../services/rentalAgreementService';
 import { fetchStoreProducts } from '../services/storeCatalogService';
 import { fetchSurfboardInventoryForRental } from '../services/surfboardInventoryService';
@@ -138,7 +139,7 @@ export default function RentalForm() {
   const [surfboards, setSurfboards] = useState<SurfboardInventoryRow[]>([]);
   const [surfboardsLoading, setSurfboardsLoading] = useState(true);
   const [boardLines, setBoardLines] = useState(() => [newBoardLine()]);
-  const [lang, setLang] = useState<RentalFormLang>('en');
+  const { lang, setLang } = usePublicFormLang();
   const t = RENTAL_FORM_STRINGS[lang];
 
   useEffect(() => {
@@ -386,7 +387,7 @@ export default function RentalForm() {
             <div className="flex justify-center sm:justify-end sm:pt-1">
               <button
                 type="button"
-                onClick={() => setLang((l) => (l === 'en' ? 'es' : 'en'))}
+                onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
                 className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-sm font-semibold transition"
               >
                 {lang === 'en' ? t.langSwitchToEs : t.langSwitchToEn}

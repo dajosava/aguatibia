@@ -2,12 +2,13 @@ import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import { formatSurfboardPublicLabel } from './surfboardDisplay';
 
-export type MetricsPeriod = '30d' | '90d' | '365d' | 'all';
+export type MetricsPeriod = '1d' | '30d' | '90d' | '365d' | 'all';
 
 export function periodStartMs(period: MetricsPeriod): number | null {
   if (period === 'all') return null;
   const d = new Date();
-  const days = period === '30d' ? 30 : period === '90d' ? 90 : 365;
+  const days =
+    period === '1d' ? 1 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
   d.setDate(d.getDate() - days);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
@@ -20,6 +21,31 @@ export function filterAgreementsByPeriod(
   const start = periodStartMs(period);
   if (start === null) return rows;
   return rows.filter((r) => new Date(r.created_at).getTime() >= start);
+}
+
+/** Fechas locales `YYYY-MM-DD`; incluye todo el día final hasta 23:59:59.999. Filtra por `created_at` del acuerdo. */
+export function filterAgreementsByDateRange(
+  rows: RentalAgreementWithStoreItems[],
+  fromYmd: string,
+  toYmd: string
+): RentalAgreementWithStoreItems[] {
+  const fromRaw = (fromYmd ?? '').trim();
+  const toRaw = (toYmd ?? '').trim();
+  if (!fromRaw || !toRaw) return rows;
+  const from = new Date(`${fromRaw}T00:00:00`);
+  const to = new Date(`${toRaw}T23:59:59.999`);
+  let fromMs = from.getTime();
+  let toMs = to.getTime();
+  if (Number.isNaN(fromMs) || Number.isNaN(toMs)) return rows;
+  if (fromMs > toMs) {
+    const t = fromMs;
+    fromMs = toMs;
+    toMs = t;
+  }
+  return rows.filter((r) => {
+    const t = new Date(r.created_at).getTime();
+    return t >= fromMs && t <= toMs;
+  });
 }
 
 const MONTH_FMT = new Intl.DateTimeFormat('es', { month: 'short', year: 'numeric' });

@@ -21,16 +21,27 @@ import type { RentalAgreementWithStoreItems } from '../../types/rentalAgreement'
 import type { SurfboardInventoryRow } from '../../types/surfboardInventory';
 import {
   buildMetricsModel,
+  filterAgreementsByDateRange,
   filterAgreementsByPeriod,
   type MetricsPeriod,
 } from '../../utils/metricsAggregation';
 
 const PERIOD_OPTIONS: { value: MetricsPeriod; label: string }[] = [
+  { value: '1d', label: 'Último día' },
   { value: '30d', label: 'Últimos 30 días' },
   { value: '90d', label: 'Últimos 90 días' },
   { value: '365d', label: 'Último año' },
   { value: 'all', label: 'Todo el histórico' },
 ];
+
+type MetricsTimeSelection = MetricsPeriod | 'custom';
+
+function formatYmdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 const PIE_COLORS = ['#0ea5e9', '#7c3aed', '#22c55e', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6', '#ec4899'];
 
@@ -69,7 +80,13 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
 }
 
 export default function AdminMetricsPage() {
-  const [period, setPeriod] = useState<MetricsPeriod>('90d');
+  const [timeSelection, setTimeSelection] = useState<MetricsTimeSelection>('90d');
+  const [customFrom, setCustomFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 29);
+    return formatYmdLocal(d);
+  });
+  const [customTo, setCustomTo] = useState(() => formatYmdLocal(new Date()));
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
   const [inventory, setInventory] = useState<SurfboardInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +111,18 @@ export default function AdminMetricsPage() {
     void load();
   }, [load]);
 
-  const filtered = useMemo(() => filterAgreementsByPeriod(agreements, period), [agreements, period]);
+  const filtered = useMemo(() => {
+    if (timeSelection === 'custom') {
+      return filterAgreementsByDateRange(agreements, customFrom, customTo);
+    }
+    return filterAgreementsByPeriod(agreements, timeSelection);
+  }, [agreements, timeSelection, customFrom, customTo]);
+
+  const customRangeInvalid =
+    timeSelection === 'custom' &&
+    customFrom.trim() !== '' &&
+    customTo.trim() !== '' &&
+    new Date(`${customFrom}T00:00:00`).getTime() > new Date(`${customTo}T00:00:00`).getTime();
   const model = useMemo(() => buildMetricsModel(filtered, inventory), [filtered, inventory]);
 
   const topBoardsChart = useMemo(
@@ -144,31 +172,72 @@ export default function AdminMetricsPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="metrics-period" className="sr-only">
-            Periodo
-          </label>
-          <select
-            id="metrics-period"
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as MetricsPeriod)}
-            className="form-input py-2 pl-3 pr-8 text-sm font-medium max-w-[220px]"
-          >
-            {PERIOD_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => void load()}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
-            Actualizar
-          </button>
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="metrics-period" className="sr-only">
+              Periodo
+            </label>
+            <select
+              id="metrics-period"
+              value={timeSelection}
+              onChange={(e) => setTimeSelection(e.target.value as MetricsTimeSelection)}
+              className="form-input py-2 pl-3 pr-8 text-sm font-medium max-w-[260px]"
+            >
+              {PERIOD_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+              <option value="custom">Rango personalizado…</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
+              Actualizar
+            </button>
+          </div>
+          {timeSelection === 'custom' ? (
+            <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-3 dark:border-slate-600 dark:bg-slate-800/40 w-full sm:max-w-xl">
+              <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                Fecha de registro del acuerdo (en tu zona horaria)
+              </p>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-1 min-w-[10rem]">
+                  <label htmlFor="metrics-custom-from" className="text-xs text-gray-500 dark:text-slate-500">
+                    Desde
+                  </label>
+                  <input
+                    id="metrics-custom-from"
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="form-input py-2 text-sm [color-scheme:light] dark:[color-scheme:dark]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-[10rem]">
+                  <label htmlFor="metrics-custom-to" className="text-xs text-gray-500 dark:text-slate-500">
+                    Hasta
+                  </label>
+                  <input
+                    id="metrics-custom-to"
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="form-input py-2 text-sm [color-scheme:light] dark:[color-scheme:dark]"
+                  />
+                </div>
+              </div>
+              {customRangeInvalid ? (
+                <p className="text-xs text-amber-800 dark:text-amber-200/90">
+                  «Desde» es posterior a «Hasta»; los datos se filtran intercambiando las fechas.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 

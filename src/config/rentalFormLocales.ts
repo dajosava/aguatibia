@@ -321,3 +321,29 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     },
   },
 };
+
+/** Textos del footer de contacto / mapa en la página del formulario público (sincronizados con el idioma del formulario). */
+export type FormPageFooterStrings = {
+  contactCardTitle: string;
+  phoneLabel: string;
+  addressLabel: string;
+  mapHeading: string;
+  mapIframeTitle: string;
+};
+
+export const FORM_PAGE_FOOTER_STRINGS: Record<RentalFormLang, FormPageFooterStrings> = {
+  en: {
+    contactCardTitle: 'Agua Tibia Surf School',
+    phoneLabel: 'Phone',
+    addressLabel: 'Address',
+    mapHeading: 'Directions — map',
+    mapIframeTitle: 'Agua Tibia Surf School location on Google Maps',
+  },
+  es: {
+    contactCardTitle: 'Agua Tibia Surf School',
+    phoneLabel: 'Teléfono',
+    addressLabel: 'Dirección',
+    mapHeading: 'Cómo llegar — mapa',
+    mapIframeTitle: 'Ubicación de Agua Tibia Surf School en Google Maps',
+  },
+};

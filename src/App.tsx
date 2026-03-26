@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import RentalForm from './components/RentalForm';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
@@ -7,16 +7,14 @@ import SurfboardInventoryPage from './components/admin/SurfboardInventoryPage';
 import StoreArticlesCatalogPage from './components/admin/StoreArticlesCatalogPage';
 import RentalArticlesInventoryPage from './components/admin/RentalArticlesInventoryPage';
 import AdminMetricsPage from './components/admin/AdminMetricsPage';
-import type { AdminSection } from './components/admin/AdminLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FileText } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 import HeaderTideStatus from './components/HeaderTideStatus';
 
-function AppContent() {
-  const { session, loading } = useAuth();
-  const [view, setView] = useState<'form' | 'admin'>('form');
-  const [adminSection, setAdminSection] = useState<AdminSection>('contracts');
+function RootLayout() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
@@ -24,11 +22,13 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3 min-w-0 flex-1">
-              <img
-                src="/aguatibialogo.png"
-                alt="Agua Tibia"
-                className="h-16 sm:h-20 md:h-24 lg:h-[6.5rem] w-auto max-w-[min(100%,720px)] object-contain shrink-0 rounded-lg"
-              />
+              <Link to="/" className="shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <img
+                  src="/aguatibialogo.png"
+                  alt="Agua Tibia"
+                  className="h-16 sm:h-20 md:h-24 lg:h-[6.5rem] w-auto max-w-[min(100%,720px)] object-contain shrink-0 rounded-lg"
+                />
+              </Link>
               <div className="min-w-0 pt-0.5">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                   Agua Tibia Surf School
@@ -38,47 +38,27 @@ function AppContent() {
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
               <ThemeToggle />
-              <button
-                type="button"
-                onClick={() => setView('form')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                  view === 'form'
-                    ? 'bg-blue-600 text-white shadow-md dark:bg-cyan-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                }`}
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md dark:bg-cyan-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  }`
+                }
               >
                 <FileText className="w-5 h-5" />
                 Formulario
-              </button>
+              </NavLink>
             </div>
           </div>
         </div>
       </nav>
 
       <main className="py-8">
-        {view === 'form' ? (
-          <RentalForm />
-        ) : loading ? (
-          <div className="flex justify-center items-center min-h-[40vh] text-gray-600 dark:text-slate-400">
-            Cargando sesión…
-          </div>
-        ) : !session ? (
-          <AdminLogin />
-        ) : (
-          <AdminLayout active={adminSection} onNavigate={setAdminSection}>
-            {adminSection === 'contracts' ? (
-              <AdminDashboard />
-            ) : adminSection === 'metrics' ? (
-              <AdminMetricsPage />
-            ) : adminSection === 'inventory' ? (
-              <SurfboardInventoryPage />
-            ) : adminSection === 'storeArticles' ? (
-              <StoreArticlesCatalogPage />
-            ) : (
-              <RentalArticlesInventoryPage />
-            )}
-          </AdminLayout>
-        )}
+        <Outlet />
       </main>
 
       <footer className="bg-white border-t border-gray-200 py-6 mt-12 dark:bg-slate-900 dark:border-slate-700">
@@ -95,13 +75,21 @@ function AppContent() {
             </a>
           </p>
           <div>
-            <button
-              type="button"
-              onClick={() => setView('admin')}
-              className="text-xs text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
-            >
-              Admin panel
-            </button>
+            {isAdminRoute ? (
+              <Link
+                to="/"
+                className="text-xs text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
+              >
+                Ir al formulario público
+              </Link>
+            ) : (
+              <Link
+                to="/admin"
+                className="text-xs text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
+              >
+                Admin panel
+              </Link>
+            )}
           </div>
         </div>
       </footer>
@@ -109,10 +97,49 @@ function AppContent() {
   );
 }
 
+function AdminShell() {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[40vh] text-gray-600 dark:text-slate-400">
+        Cargando sesión…
+      </div>
+    );
+  }
+  if (!session) {
+    return <AdminLogin />;
+  }
+  return (
+    <AdminLayout>
+      <Outlet />
+    </AdminLayout>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<RootLayout />}>
+        <Route path="/" element={<RentalForm />} />
+        <Route path="/admin" element={<AdminShell />}>
+          <Route index element={<Navigate to="acuerdos" replace />} />
+          <Route path="acuerdos" element={<AdminDashboard />} />
+          <Route path="metricas" element={<AdminMetricsPage />} />
+          <Route path="tablas" element={<SurfboardInventoryPage />} />
+          <Route path="tienda" element={<StoreArticlesCatalogPage />} />
+          <Route path="articulos-renta" element={<RentalArticlesInventoryPage />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <AppRoutes />
     </AuthProvider>
   );
 }

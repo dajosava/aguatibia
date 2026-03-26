@@ -1,17 +1,12 @@
 import type { ReactNode } from 'react';
+import { NavLink } from 'react-router-dom';
 import { Armchair, BarChart3, LayoutDashboard, LogOut, ShoppingBag, User, Waves } from 'lucide-react';
+import { adminPath, type AdminSection } from '../../config/adminPaths';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type AdminSection =
-  | 'contracts'
-  | 'inventory'
-  | 'storeArticles'
-  | 'rentalArticles'
-  | 'metrics';
+export type { AdminSection };
 
 type Props = {
-  active: AdminSection;
-  onNavigate: (section: AdminSection) => void;
   children: ReactNode;
 };
 
@@ -27,7 +22,7 @@ const nav: {
   { id: 'rentalArticles', label: 'Artículos de renta', icon: Armchair },
 ];
 
-export default function AdminLayout({ active, onNavigate, children }: Props) {
+export default function AdminLayout({ children }: Props) {
   const { signOut, user } = useAuth();
   const email = user?.email ?? '';
   const fullName =
@@ -55,21 +50,21 @@ export default function AdminLayout({ active, onNavigate, children }: Props) {
         <nav className="p-2 flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible">
           {nav.map((item) => {
             const Icon = item.icon;
-            const isActive = active === item.id;
             return (
-              <button
+              <NavLink
                 key={item.id}
-                type="button"
-                onClick={() => onNavigate(item.id)}
-                className={`flex items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-900 dark:bg-cyan-950/80 dark:text-cyan-200 ring-1 ring-blue-200 dark:ring-cyan-900/50'
-                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-                }`}
+                to={adminPath(item.id)}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-900 dark:bg-cyan-950/80 dark:text-cyan-200 ring-1 ring-blue-200 dark:ring-cyan-900/50'
+                      : 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                  }`
+                }
               >
                 <Icon className="w-5 h-5 shrink-0" aria-hidden />
                 {item.label}
-              </button>
+              </NavLink>
             );
           })}
         </nav>

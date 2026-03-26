@@ -121,8 +121,8 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
   en: {
     langSwitchToEs: 'Español',
     langSwitchToEn: 'English',
-    successTitle: 'Form submitted!',
-    successBody: 'Thank you for completing the rental agreement. We will get in touch with you soon.',
+    successTitle: 'Successfully added',
+    successBody: 'Your form was submitted correctly. Thank you.',
     successAnother: 'Submit another',
     headerSubtitle: 'Surfboard Rental Agreement',
     fullName: 'Full name *',
@@ -222,8 +222,8 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
   es: {
     langSwitchToEs: 'Español',
     langSwitchToEn: 'English',
-    successTitle: '¡Formulario enviado!',
-    successBody: 'Gracias por completar el acuerdo de renta. Nos pondremos en contacto contigo pronto.',
+    successTitle: '¡Agregado correctamente!',
+    successBody: 'El formulario se envió bien. Gracias.',
     successAnother: 'Enviar otro formulario',
     headerSubtitle: 'Acuerdo de alquiler de tabla',
     fullName: 'Nombre completo *',

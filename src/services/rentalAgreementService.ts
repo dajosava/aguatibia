@@ -35,7 +35,7 @@ export async function insertRentalAgreementWithStoreItems(
   );
   if (errBoards) throw errBoards;
 
-  if (storeLines.length === 0) return;
+  if (storeLines.length === 0) return agreementId;
 
   const { error: errItems } = await supabase.from('rental_agreement_store_items').insert(
     storeLines.map((line, i) => ({

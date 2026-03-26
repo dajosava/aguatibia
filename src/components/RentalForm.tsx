@@ -167,6 +167,12 @@ export default function RentalForm() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isSuccess) return;
+    const timer = window.setTimeout(() => setIsSuccess(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [isSuccess]);
+
   const getRentalBasePrice = () => getRentalPriceForSelection(formData.rental_type, formData.rental_duration);
 
   /** Tablas ya elegidas en el formulario (cada una suma el mismo precio unitario de renta). */
@@ -342,8 +348,6 @@ export default function RentalForm() {
         signature_data: null,
       });
       setBoardLines([newBoardLine()]);
-
-      setTimeout(() => setIsSuccess(false), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.errors.submitFailed);
     } finally {

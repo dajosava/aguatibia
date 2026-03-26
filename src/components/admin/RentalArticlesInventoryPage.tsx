@@ -19,7 +19,6 @@ export default function RentalArticlesInventoryPage() {
   const [newDesc, setNewDesc] = useState('');
   const [newUnitPrice, setNewUnitPrice] = useState('0');
   const [newStock, setNewStock] = useState('1');
-  const [newSort, setNewSort] = useState('0');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<RentalArticleInventoryRow | null>(null);
   const [editName, setEditName] = useState('');
@@ -27,7 +26,6 @@ export default function RentalArticlesInventoryPage() {
   const [editDesc, setEditDesc] = useState('');
   const [editUnitPrice, setEditUnitPrice] = useState('0');
   const [editStock, setEditStock] = useState('1');
-  const [editSort, setEditSort] = useState('0');
 
   const load = useCallback(async () => {
     setError(null);
@@ -77,7 +75,6 @@ export default function RentalArticlesInventoryPage() {
       setError('La cantidad en stock debe ser un entero ≥ 0.');
       return;
     }
-    const sort = parseInt(newSort, 10);
     setSaving(true);
     setError(null);
     try {
@@ -87,14 +84,12 @@ export default function RentalArticlesInventoryPage() {
         description: newDesc.trim() || null,
         unit_price: unitPrice,
         stock_quantity: stock,
-        sort_order: Number.isFinite(sort) ? sort : 0,
       });
       setNewName('');
       setNewCategory('');
       setNewDesc('');
       setNewUnitPrice('0');
       setNewStock('1');
-      setNewSort('0');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar');
@@ -110,7 +105,6 @@ export default function RentalArticlesInventoryPage() {
     setEditDesc(row.description ?? '');
     setEditUnitPrice(Number(row.unit_price ?? 0).toFixed(2));
     setEditStock(String(row.stock_quantity));
-    setEditSort(String(row.sort_order));
   };
 
   const closeEdit = () => setEditing(null);
@@ -133,7 +127,6 @@ export default function RentalArticlesInventoryPage() {
       setError('La cantidad en stock debe ser un entero ≥ 0.');
       return;
     }
-    const sort = parseInt(editSort, 10);
     setSaving(true);
     setError(null);
     try {
@@ -143,7 +136,6 @@ export default function RentalArticlesInventoryPage() {
         description: editDesc.trim() || null,
         unit_price: unitPrice,
         stock_quantity: stock,
-        sort_order: Number.isFinite(sort) ? sort : 0,
       });
       closeEdit();
       await load();
@@ -254,19 +246,6 @@ export default function RentalArticlesInventoryPage() {
                 className="form-input"
               />
             </div>
-            <div>
-              <label className="form-label" htmlFor="art-sort">
-                Orden (menor primero)
-              </label>
-              <input
-                id="art-sort"
-                type="number"
-                step={1}
-                value={newSort}
-                onChange={(e) => setNewSort(e.target.value)}
-                className="form-input"
-              />
-            </div>
             <div className="sm:col-span-2">
               <label className="form-label" htmlFor="art-desc">
                 Descripción / notas (solo interno)
@@ -302,7 +281,6 @@ export default function RentalArticlesInventoryPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-14">Orden</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nombre</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Categoría</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-28">
@@ -316,14 +294,13 @@ export default function RentalArticlesInventoryPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
                       No hay artículos. Añade el primero arriba.
                     </td>
                   </tr>
                 ) : (
                   rows.map((row) => (
                     <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50">
-                      <td className="px-4 py-3 text-gray-600 dark:text-slate-400">{row.sort_order}</td>
                       <td className="px-4 py-3 font-semibold text-gray-900 dark:text-slate-100">{row.name}</td>
                       <td className="px-4 py-3 text-gray-700 dark:text-slate-300">
                         {(row.category ?? '').trim() || '—'}
@@ -414,34 +391,19 @@ export default function RentalArticlesInventoryPage() {
                   required
                 />
               </div>
-              <div className="mb-4 grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label" htmlFor="edit-art-stock">
-                    Stock *
-                  </label>
-                  <input
-                    id="edit-art-stock"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={editStock}
-                    onChange={(e) => setEditStock(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label className="form-label" htmlFor="edit-art-sort">
-                    Orden
-                  </label>
-                  <input
-                    id="edit-art-sort"
-                    type="number"
-                    step={1}
-                    value={editSort}
-                    onChange={(e) => setEditSort(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
+              <div className="mb-4">
+                <label className="form-label" htmlFor="edit-art-stock">
+                  Stock *
+                </label>
+                <input
+                  id="edit-art-stock"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={editStock}
+                  onChange={(e) => setEditStock(e.target.value)}
+                  className="form-input"
+                />
               </div>
               <div className="mb-6">
                 <label className="form-label" htmlFor="edit-art-desc">

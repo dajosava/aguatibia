@@ -12,7 +12,6 @@ export async function fetchRentalArticleInventory(): Promise<RentalArticleInvent
   const { data, error } = await supabase
     .from('rental_article_inventory')
     .select(SELECT)
-    .order('sort_order', { ascending: true })
     .order('category', { ascending: true })
     .order('name', { ascending: true });
 
@@ -34,7 +33,6 @@ export async function insertRentalArticle(row: RentalArticleInventoryInsert): Pr
       description: row.description?.trim() || null,
       unit_price: price,
       stock_quantity: stock,
-      sort_order: row.sort_order ?? 0,
     })
     .select(SELECT)
     .single();
@@ -55,7 +53,6 @@ export async function updateRentalArticle(id: string, patch: RentalArticleInvent
   if (patch.stock_quantity !== undefined) {
     payload.stock_quantity = Math.max(0, Math.floor(patch.stock_quantity));
   }
-  if (patch.sort_order !== undefined) payload.sort_order = Math.floor(patch.sort_order);
 
   const { error } = await supabase.from('rental_article_inventory').update(payload).eq('id', id);
   if (error) throw error;

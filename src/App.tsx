@@ -8,7 +8,7 @@ import StoreArticlesCatalogPage from './components/admin/StoreArticlesCatalogPag
 import RentalArticlesInventoryPage from './components/admin/RentalArticlesInventoryPage';
 import type { AdminSection } from './components/admin/AdminLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LayoutDashboard, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 import HeaderTideStatus from './components/HeaderTideStatus';
 
@@ -24,9 +24,9 @@ function AppContent() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3 min-w-0 flex-1">
               <img
-                src="/agtlogo.png"
+                src="/aguatibialogo.png"
                 alt="Agua Tibia"
-                className="h-[4.5rem] sm:h-24 w-auto max-w-[min(100%,380px)] object-contain shrink-0"
+                className="h-16 sm:h-20 md:h-24 lg:h-[6.5rem] w-auto max-w-[min(100%,720px)] object-contain shrink-0 rounded-lg"
               />
               <div className="min-w-0 pt-0.5">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
@@ -48,18 +48,6 @@ function AppContent() {
               >
                 <FileText className="w-5 h-5" />
                 Formulario
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('admin')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                  view === 'admin'
-                    ? 'bg-blue-600 text-white shadow-md dark:bg-cyan-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                <LayoutDashboard className="w-5 h-5" />
-                Admin
               </button>
             </div>
           </div>
@@ -91,18 +79,27 @@ function AppContent() {
       </main>
 
       <footer className="bg-white border-t border-gray-200 py-6 mt-12 dark:bg-slate-900 dark:border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
           <p className="text-gray-600 text-sm dark:text-slate-400">
             Developed by{' '}
             <a
-              href="https://manakinlabs.com"
+              href="https://davidsalazarvalverde.netlify.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800 font-medium transition dark:text-cyan-400 dark:hover:text-cyan-300"
             >
-              manakinlabs.com
+              David Salazar V
             </a>
           </p>
+          <div>
+            <button
+              type="button"
+              onClick={() => setView('admin')}
+              className="text-xs text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
+            >
+              Admin panel
+            </button>
+          </div>
         </div>
       </footer>
     </div>

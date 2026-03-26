@@ -16,12 +16,8 @@ export type RentalArticleInventoryInsert = Pick<RentalArticleInventoryRow, 'name
   description?: string | null;
   unit_price?: number;
   stock_quantity?: number;
-  sort_order?: number;
 };
 
 export type RentalArticleInventoryUpdate = Partial<
-  Pick<
-    RentalArticleInventoryRow,
-    'name' | 'category' | 'description' | 'unit_price' | 'stock_quantity' | 'sort_order'
-  >
+  Pick<RentalArticleInventoryRow, 'name' | 'category' | 'description' | 'unit_price' | 'stock_quantity'>
 >;

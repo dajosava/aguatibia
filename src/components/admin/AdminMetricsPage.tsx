@@ -38,6 +38,9 @@ function formatUsd(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
+const METRICS_SURFACE =
+  'rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-600 dark:bg-slate-900/95';
+
 function KpiCard({
   title,
   value,
@@ -48,18 +51,18 @@ function KpiCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500">{title}</p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-gray-900 dark:text-slate-100">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">{hint}</p> : null}
+    <div className={METRICS_SURFACE}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-white/80">{title}</p>
+      <p className="mt-2 text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-gray-500 dark:text-white/85">{hint}</p> : null}
     </div>
   );
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-      <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-slate-100">{title}</h3>
+    <div className={METRICS_SURFACE}>
+      <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
       <div className="h-72 w-full min-w-0">{children}</div>
     </div>
   );
@@ -170,7 +173,7 @@ export default function AdminMetricsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800/60 dark:bg-red-950/50 dark:text-white">
           {error}
         </div>
       ) : null}
@@ -218,21 +221,21 @@ export default function AdminMetricsPage() {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={model.monthly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} className="text-gray-600" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'currentColor' }} className="text-gray-600 dark:text-white" />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: 'currentColor' }}
                   allowDecimals={false}
                   width={36}
-                  className="text-gray-600"
+                  className="text-gray-600 dark:text-white"
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: 'currentColor' }}
                   tickFormatter={(v) => `$${v}`}
                   width={48}
-                  className="text-gray-600"
+                  className="text-gray-600 dark:text-white"
                 />
                 <Tooltip
                   contentStyle={{
@@ -295,7 +298,7 @@ export default function AdminMetricsPage() {
 
           <ChartCard title="Tablas más asignadas en acuerdos">
             {topBoardsChart.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-slate-500 flex items-center h-full justify-center">
+              <p className="text-sm text-gray-500 dark:text-white/90 flex items-center h-full justify-center">
                 Sin datos de tablas en el periodo.
               </p>
             ) : (
@@ -329,7 +332,7 @@ export default function AdminMetricsPage() {
 
           <ChartCard title="Productos de tienda más añadidos a contratos">
             {topProductsChart.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-slate-500 flex items-center h-full justify-center">
+              <p className="text-sm text-gray-500 dark:text-white/90 flex items-center h-full justify-center">
                 Sin líneas de tienda en el periodo (extras fuera de la renta de tablas).
               </p>
             ) : (
@@ -359,7 +362,7 @@ export default function AdminMetricsPage() {
 
           <ChartCard title="Combinaciones tipo / duración de renta">
             {model.byRentalCombo.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-slate-500 flex items-center h-full justify-center">
+              <p className="text-sm text-gray-500 dark:text-white/90 flex items-center h-full justify-center">
                 Sin datos.
               </p>
             ) : (
@@ -377,7 +380,7 @@ export default function AdminMetricsPage() {
         </div>
       )}
 
-      <p className="text-xs text-gray-500 dark:text-slate-500 border-t border-gray-200 dark:border-slate-700 pt-4">
+      <p className="text-xs text-gray-500 dark:text-white/85 border-t border-gray-200 dark:border-slate-700 pt-4">
         Los datos provienen de los acuerdos guardados y sus tablas / líneas de tienda. El catálogo de «artículos de
         renta» no está vinculado aún a líneas de contrato; cuando exista ese registro, se podrá ampliar este módulo
         con frecuencia por artículo.

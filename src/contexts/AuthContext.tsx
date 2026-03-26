@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import { clearSupabaseBrowserAuthStorage } from '../lib/clearSupabaseBrowserAuthStorage';
 import { supabase } from '../lib/supabase';
 
 type AuthContextValue = {
@@ -52,7 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // `global` llama a `/logout?scope=global`; en producción (Netlify u otra URL) GoTrue a veces responde 403
+    // mientras que `local` basta para cerrar sesión en este navegador y suele evitar el error.
+    await supabase.auth.signOut({ scope: 'local' });
+    const { data: after } = await supabase.auth.getSession();
+    if (after.session) {
+      clearSupabaseBrowserAuthStorage();
+      setSession(null);
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(

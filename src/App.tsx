@@ -157,7 +157,7 @@ function RootLayout() {
         </div>
       </nav>
 
-      <main className="py-8">
+      <main className={isAdminRoute ? 'py-1 sm:py-2' : 'py-8'}>
         <Outlet />
       </main>
 

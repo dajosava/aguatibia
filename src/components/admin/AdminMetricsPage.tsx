@@ -27,7 +27,8 @@ import {
 } from '../../utils/metricsAggregation';
 
 const PERIOD_OPTIONS: { value: MetricsPeriod; label: string }[] = [
-  { value: '1d', label: 'Último día' },
+  { value: 'today', label: 'El día de hoy' },
+  { value: '7d', label: 'Última semana' },
   { value: '30d', label: 'Últimos 30 días' },
   { value: '90d', label: 'Últimos 90 días' },
   { value: '365d', label: 'Último año' },
@@ -50,7 +51,20 @@ function formatUsd(n: number): string {
 }
 
 const METRICS_SURFACE =
-  'rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-600 dark:bg-slate-900/95';
+  'rounded-xl border border-slate-600/90 bg-slate-900/95 p-5 shadow-lg text-white';
+
+/** Ejes y números en gráficos (alto contraste sobre fondo oscuro). */
+const CHART_TICK = { fill: '#f8fafc', fontSize: 12 };
+const CHART_TICK_Y = { fill: '#f8fafc', fontSize: 11 };
+const CHART_LEGEND_STYLE = { color: '#f8fafc', fontSize: '12px', paddingTop: '8px' };
+
+const tooltipContentStyle: CSSProperties = {
+  borderRadius: 10,
+  border: '1px solid #475569',
+  backgroundColor: '#0f172a',
+  color: '#f8fafc',
+  fontSize: 13,
+};
 
 function KpiCard({
   title,
@@ -63,9 +77,9 @@ function KpiCard({
 }) {
   return (
     <div className={METRICS_SURFACE}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-white/80">{title}</p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-gray-500 dark:text-white/85">{hint}</p> : null}
+      <p className="text-sm font-semibold uppercase tracking-wide text-white/90">{title}</p>
+      <p className="mt-3 text-3xl md:text-4xl font-bold tabular-nums text-white leading-none">{value}</p>
+      {hint ? <p className="mt-2 text-base text-white/85 leading-snug">{hint}</p> : null}
     </div>
   );
 }
@@ -73,7 +87,7 @@ function KpiCard({
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className={METRICS_SURFACE}>
-      <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+      <h3 className="mb-4 text-base md:text-lg font-semibold tracking-tight text-white">{title}</h3>
       <div className="h-72 w-full min-w-0">{children}</div>
     </div>
   );
@@ -159,8 +173,8 @@ export default function AdminMetricsPage() {
 
   if (loading && agreements.length === 0) {
     return (
-      <div className="p-6 lg:p-8">
-        <div className="flex items-center justify-center min-h-[40vh] text-gray-600 dark:text-slate-400">
+      <div className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-8 md:px-6">
+        <div className="flex items-center justify-center min-h-[40vh] text-white text-lg md:text-xl font-medium">
           Cargando analítica y reportes…
         </div>
       </div>
@@ -168,15 +182,15 @@ export default function AdminMetricsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-blue-100 dark:bg-cyan-950/60 p-2.5">
-            <BarChart3 className="w-6 h-6 text-blue-800 dark:text-cyan-200" aria-hidden />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">Analítica y reportes</h2>
-            <p className="text-sm text-gray-600 dark:text-slate-400 mt-0.5">
+    <div className="max-w-7xl mx-auto space-y-4 md:space-y-6 rounded-xl border border-slate-700 bg-slate-950 px-3 py-4 md:px-5 md:py-6 text-white">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3 min-w-0">
+          <BarChart3 className="w-11 h-11 md:w-12 md:h-12 shrink-0 text-cyan-300 mt-0.5" aria-hidden />
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+              Analítica y reportes
+            </h1>
+            <p className="text-base md:text-lg text-white/90 leading-snug mt-1">
               Resumen de acuerdos, tablas y ventas en tienda registradas en el sistema.
             </p>
           </div>
@@ -190,33 +204,35 @@ export default function AdminMetricsPage() {
               id="metrics-period"
               value={timeSelection}
               onChange={(e) => setTimeSelection(e.target.value as MetricsTimeSelection)}
-              className="form-input py-2 pl-3 pr-8 text-sm font-medium max-w-[260px]"
+              className="rounded-lg border-2 border-slate-600 bg-slate-900 px-3 py-2.5 text-base font-medium text-white max-w-[280px] focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 [color-scheme:dark]"
             >
               {PERIOD_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option key={o.value} value={o.value} className="bg-slate-900 text-white">
                   {o.label}
                 </option>
               ))}
-              <option value="custom">Rango personalizado…</option>
+              <option value="custom" className="bg-slate-900 text-white">
+                Rango personalizado…
+              </option>
             </select>
             <button
               type="button"
               onClick={() => void load()}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-600 bg-slate-800 px-4 py-2.5 text-base font-semibold text-white hover:bg-slate-750 disabled:opacity-60"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} aria-hidden />
               Actualizar
             </button>
           </div>
           {timeSelection === 'custom' ? (
-            <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-3 dark:border-slate-600 dark:bg-slate-800/40 w-full sm:max-w-xl">
-              <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+            <div className="flex flex-col gap-3 rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-4 w-full sm:max-w-xl">
+              <p className="text-sm md:text-base font-medium text-white">
                 Fecha de registro del acuerdo (día en Costa Rica)
               </p>
               <div className="flex flex-wrap items-end gap-3">
-                <div className="flex flex-col gap-1 min-w-[10rem]">
-                  <label htmlFor="metrics-custom-from" className="text-xs text-gray-500 dark:text-slate-500">
+                <div className="flex flex-col gap-1.5 min-w-[10rem]">
+                  <label htmlFor="metrics-custom-from" className="text-sm text-white/90">
                     Desde
                   </label>
                   <input
@@ -224,11 +240,11 @@ export default function AdminMetricsPage() {
                     type="date"
                     value={customFromDraft}
                     onChange={(e) => setCustomFromDraft(e.target.value)}
-                    className="form-input py-2 text-sm [color-scheme:light] dark:[color-scheme:dark]"
+                    className="rounded-lg border-2 border-slate-600 bg-slate-950 px-3 py-2.5 text-base text-white [color-scheme:dark]"
                   />
                 </div>
-                <div className="flex flex-col gap-1 min-w-[10rem]">
-                  <label htmlFor="metrics-custom-to" className="text-xs text-gray-500 dark:text-slate-500">
+                <div className="flex flex-col gap-1.5 min-w-[10rem]">
+                  <label htmlFor="metrics-custom-to" className="text-sm text-white/90">
                     Hasta
                   </label>
                   <input
@@ -236,7 +252,7 @@ export default function AdminMetricsPage() {
                     type="date"
                     value={customToDraft}
                     onChange={(e) => setCustomToDraft(e.target.value)}
-                    className="form-input py-2 text-sm [color-scheme:light] dark:[color-scheme:dark]"
+                    className="rounded-lg border-2 border-slate-600 bg-slate-950 px-3 py-2.5 text-base text-white [color-scheme:dark]"
                   />
                 </div>
                 <button
@@ -245,18 +261,18 @@ export default function AdminMetricsPage() {
                     setCustomFromApplied(customFromDraft);
                     setCustomToApplied(customToDraft);
                   }}
-                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 dark:bg-cyan-700 dark:hover:bg-cyan-600"
+                  className="inline-flex items-center justify-center rounded-lg bg-cyan-600 px-4 py-2.5 text-base font-semibold text-white shadow-md hover:bg-cyan-500"
                 >
                   Aplicar rango
                 </button>
               </div>
               {customRangeDirty ? (
-                <p className="text-xs text-amber-800 dark:text-amber-200/90">
+                <p className="text-sm text-amber-200">
                   Los cambios de fecha no se aplican hasta que pulses «Aplicar rango».
                 </p>
               ) : null}
               {customRangeInvalid ? (
-                <p className="text-xs text-amber-800 dark:text-amber-200/90">
+                <p className="text-sm text-amber-200">
                   «Desde» es posterior a «Hasta»; al aplicar se usarán las fechas en orden correcto.
                 </p>
               ) : null}
@@ -266,7 +282,7 @@ export default function AdminMetricsPage() {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800/60 dark:bg-red-950/50 dark:text-white">
+        <div className="rounded-lg border border-red-500/50 bg-red-950/60 px-4 py-3 text-base text-white">
           {error}
         </div>
       ) : null}
@@ -305,7 +321,7 @@ export default function AdminMetricsPage() {
       </div>
 
       {model.monthly.length === 0 ? (
-        <p className="text-center text-sm text-gray-500 dark:text-slate-500 py-8">
+        <p className="text-center text-lg md:text-xl text-white py-10 font-medium">
           No hay acuerdos en el periodo seleccionado.
         </p>
       ) : (
@@ -313,28 +329,25 @@ export default function AdminMetricsPage() {
           <ChartCard title="Acuerdos e ingresos por mes">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={model.monthly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'currentColor' }} className="text-gray-600 dark:text-white" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis dataKey="label" tick={CHART_TICK} tickMargin={8} />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 11, fill: 'currentColor' }}
+                  tick={CHART_TICK_Y}
                   allowDecimals={false}
-                  width={36}
-                  className="text-gray-600 dark:text-white"
+                  width={44}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 11, fill: 'currentColor' }}
+                  tick={CHART_TICK_Y}
                   tickFormatter={(v) => `$${v}`}
-                  width={48}
-                  className="text-gray-600 dark:text-white"
+                  width={56}
                 />
                 <Tooltip
-                  contentStyle={{
-                    borderRadius: 8,
-                    border: '1px solid #e2e8f0',
-                  }}
+                  contentStyle={tooltipContentStyle}
+                  labelStyle={{ color: '#f8fafc', fontSize: 13, fontWeight: 600 }}
+                  itemStyle={{ color: '#f8fafc', fontSize: 13 }}
                   formatter={(value, name) => {
                     const n = String(name ?? '');
                     const v = value == null ? 0 : Number(value);
@@ -344,7 +357,7 @@ export default function AdminMetricsPage() {
                     return [v, 'Acuerdos'];
                   }}
                 />
-                <Legend />
+                <Legend wrapperStyle={CHART_LEGEND_STYLE} />
                 <Bar
                   yAxisId="left"
                   dataKey="agreements"
@@ -375,23 +388,53 @@ export default function AdminMetricsPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={({ name, percent }) =>
-                    `${String(name ?? '')} ${(((percent as number) ?? 0) * 100).toFixed(0)}%`
-                  }
+                  labelLine={{ stroke: '#94a3b8' }}
+                  label={({
+                    cx,
+                    cy,
+                    midAngle,
+                    innerRadius,
+                    outerRadius,
+                    name,
+                    percent,
+                  }) => {
+                    const RADIAN = Math.PI / 180;
+                    const r = (innerRadius ?? 0) + ((outerRadius ?? 0) - (innerRadius ?? 0)) * 0.65;
+                    const x = (cx ?? 0) + r * Math.cos(-(midAngle ?? 0) * RADIAN);
+                    const y = (cy ?? 0) + r * Math.sin(-(midAngle ?? 0) * RADIAN);
+                    const pct = ((percent as number) ?? 0) * 100;
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#f8fafc"
+                        textAnchor={x > (cx ?? 0) ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        className="text-sm font-semibold"
+                        style={{ fontSize: 11 }}
+                      >
+                        {`${String(name ?? '')} ${pct.toFixed(0)}%`}
+                      </text>
+                    );
+                  }}
                 >
                   {model.byStatus.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
+                <Tooltip
+                  contentStyle={tooltipContentStyle}
+                  labelStyle={{ color: '#f8fafc', fontSize: 13 }}
+                  itemStyle={{ color: '#f8fafc', fontSize: 13 }}
+                />
+                <Legend wrapperStyle={CHART_LEGEND_STYLE} />
+          </PieChart>
             </ResponsiveContainer>
           </ChartCard>
 
           <ChartCard title="Tablas más asignadas en acuerdos">
             {topBoardsChart.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-white/90 flex items-center h-full justify-center">
+              <p className="text-base md:text-lg text-white flex items-center h-full justify-center text-center px-4 font-medium">
                 Sin datos de tablas en el periodo.
               </p>
             ) : (
@@ -401,16 +444,19 @@ export default function AdminMetricsPage() {
                   data={topBoardsChart}
                   margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal className="stroke-gray-200 dark:stroke-slate-700" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" horizontal />
+                  <XAxis type="number" allowDecimals={false} tick={CHART_TICK_Y} />
                   <YAxis
                     type="category"
                     dataKey="shortLabel"
-                    width={132}
-                    tick={{ fontSize: 10 }}
+                    width={148}
+                    tick={{ fill: '#f8fafc', fontSize: 12 }}
                     interval={0}
                   />
                   <Tooltip
+                    contentStyle={tooltipContentStyle}
+                    labelStyle={{ color: '#f8fafc', fontSize: 13 }}
+                    itemStyle={{ color: '#f8fafc', fontSize: 13 }}
                     formatter={(value) => [Number(value ?? 0), 'Asignaciones']}
                     labelFormatter={(_, p) => {
                       const row = p?.[0]?.payload as { displayLabel?: string } | undefined;
@@ -425,7 +471,7 @@ export default function AdminMetricsPage() {
 
           <ChartCard title="Productos de tienda más añadidos a contratos">
             {topProductsChart.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-white/90 flex items-center h-full justify-center">
+              <p className="text-base md:text-lg text-white flex items-center h-full justify-center text-center px-4 font-medium">
                 Sin líneas de tienda en el periodo (extras fuera de la renta de tablas).
               </p>
             ) : (
@@ -435,10 +481,19 @@ export default function AdminMetricsPage() {
                   data={topProductsChart}
                   margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal className="stroke-gray-200 dark:stroke-slate-700" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="shortName" width={140} tick={{ fontSize: 10 }} interval={0} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" horizontal />
+                  <XAxis type="number" allowDecimals={false} tick={CHART_TICK_Y} />
+                  <YAxis
+                    type="category"
+                    dataKey="shortName"
+                    width={152}
+                    tick={{ fill: '#f8fafc', fontSize: 12 }}
+                    interval={0}
+                  />
                   <Tooltip
+                    contentStyle={tooltipContentStyle}
+                    labelStyle={{ color: '#f8fafc', fontSize: 13 }}
+                    itemStyle={{ color: '#f8fafc', fontSize: 13 }}
                     formatter={(value) => [Number(value ?? 0), 'Líneas en acuerdos']}
                     labelFormatter={(_, p) => {
                       const row = p?.[0]?.payload as { productName?: string; revenue?: number } | undefined;
@@ -455,16 +510,27 @@ export default function AdminMetricsPage() {
 
           <ChartCard title="Combinaciones tipo / duración de renta">
             {model.byRentalCombo.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-white/90 flex items-center h-full justify-center">
+              <p className="text-base md:text-lg text-white flex items-center h-full justify-center font-medium">
                 Sin datos.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={model.byRentalCombo} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
-                  <XAxis dataKey="key" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={70} interval={0} />
-                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} width={36} />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                  <XAxis
+                    dataKey="key"
+                    tick={{ fill: '#f8fafc', fontSize: 10 }}
+                    angle={-25}
+                    textAnchor="end"
+                    height={72}
+                    interval={0}
+                  />
+                  <YAxis tick={CHART_TICK_Y} allowDecimals={false} width={44} />
+                  <Tooltip
+                    contentStyle={tooltipContentStyle}
+                    labelStyle={{ color: '#f8fafc', fontSize: 13 }}
+                    itemStyle={{ color: '#f8fafc', fontSize: 13 }}
+                  />
                   <Bar dataKey="count" name="Acuerdos" fill="#6366f1" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -473,7 +539,7 @@ export default function AdminMetricsPage() {
         </div>
       )}
 
-      <p className="text-xs text-gray-500 dark:text-white/85 border-t border-gray-200 dark:border-slate-700 pt-4">
+      <p className="text-sm md:text-base text-white/90 border-t border-slate-600 pt-5 leading-relaxed">
         Los datos provienen de los acuerdos guardados y sus tablas / líneas de tienda. El catálogo de «artículos de
         renta» no está vinculado aún a líneas de contrato; cuando exista ese registro, se podrá ampliar este módulo
         con frecuencia por artículo.

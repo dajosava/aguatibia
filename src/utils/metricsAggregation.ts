@@ -2,13 +2,36 @@ import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import { formatSurfboardPublicLabel } from './surfboardDisplay';
 
-export type MetricsPeriod = '1d' | '30d' | '90d' | '365d' | 'all';
+export type MetricsPeriod = 'today' | '7d' | '30d' | '90d' | '365d' | 'all';
+
+/** Zona usada para “hoy” y rangos por día calendario (coincide con el selector personalizado). */
+export const METRICS_REPORT_TIMEZONE = 'America/Costa_Rica';
+
+/** Fecha local `YYYY-MM-DD` en la zona indicada (p. ej. “hoy” en Costa Rica). */
+export function currentYmdInTimeZone(timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+/** Suma días a una fecha civil `YYYY-MM-DD` (sin depender del huso del navegador). */
+export function addCalendarDaysToYmd(ymd: string, deltaDays: number): string {
+  const [y, mo, da] = ymd.split('-').map(Number);
+  const u = Date.UTC(y, mo - 1, da + deltaDays);
+  const d = new Date(u);
+  const yy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
 
 export function periodStartMs(period: MetricsPeriod): number | null {
-  if (period === 'all') return null;
+  if (period === 'all' || period === 'today' || period === '7d') return null;
   const d = new Date();
-  const days =
-    period === '1d' ? 1 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
+  const days = period === '30d' ? 30 : period === '90d' ? 90 : 365;
   d.setDate(d.getDate() - days);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
@@ -18,6 +41,19 @@ export function filterAgreementsByPeriod(
   rows: RentalAgreementWithStoreItems[],
   period: MetricsPeriod
 ): RentalAgreementWithStoreItems[] {
+  const tz = METRICS_REPORT_TIMEZONE;
+
+  if (period === 'today') {
+    const y = currentYmdInTimeZone(tz);
+    return filterAgreementsByDateRange(rows, y, y, tz);
+  }
+  if (period === '7d') {
+    const todayYmd = currentYmdInTimeZone(tz);
+    const fromYmd = addCalendarDaysToYmd(todayYmd, -6);
+    return filterAgreementsByDateRange(rows, fromYmd, todayYmd, tz);
+  }
+  if (period === 'all') return rows;
+
   const start = periodStartMs(period);
   if (start === null) return rows;
   return rows.filter((r) => new Date(r.created_at).getTime() >= start);

@@ -29,7 +29,9 @@ export default function AdminLogin() {
             <Lock className="w-10 h-10 text-blue-600 dark:text-cyan-400" />
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-slate-100 mb-8">Acceso administración</h2>
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-center text-gray-900 dark:text-slate-100 mb-8">
+          Acceso administración
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>

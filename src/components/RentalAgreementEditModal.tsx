@@ -453,7 +453,7 @@ export default function RentalAgreementEditModal({
         aria-labelledby="edit-agreement-title"
       >
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-slate-900 p-6 text-white border-b border-blue-900/30">
-          <h2 id="edit-agreement-title" className="text-2xl font-bold">
+          <h2 id="edit-agreement-title" className="text-lg sm:text-xl font-semibold tracking-tight">
             {isClosed ? 'Acuerdo cerrado' : 'Editar acuerdo'}
           </h2>
           <p className="text-sm text-blue-100 dark:text-slate-400 mt-1">

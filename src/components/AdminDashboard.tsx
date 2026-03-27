@@ -191,7 +191,7 @@ export default function AdminDashboard() {
     active ? 'ring-2 ring-white ring-offset-2 ring-offset-white/10 dark:ring-offset-slate-900/80 shadow-lg scale-[1.02]' : '';
 
   const statCardBase =
-    'text-left rounded-xl shadow-md p-6 transition transform cursor-pointer hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-300 dark:focus-visible:ring-cyan-600';
+    'text-left rounded-lg shadow-md p-3 sm:p-4 transition transform cursor-pointer hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-300 dark:focus-visible:ring-cyan-600';
 
   const formatDateTime = (value: string | null | undefined) => {
     const ms = parseDateTimeMs(value ?? null);
@@ -236,34 +236,38 @@ export default function AdminDashboard() {
       : 'overflow-x-auto';
 
   return (
-    <div className="text-gray-900 dark:text-slate-100 p-4 md:p-8">
+    <div className="text-gray-900 dark:text-slate-100 px-2 py-1 md:px-3 md:py-2">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-slate-100 mb-2">Acuerdos de renta</h1>
-          <p className="text-gray-600 dark:text-slate-400">Agua Tibia Surf School — listado y detalle de contratos</p>
+        <div className="mb-2">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100 mb-0.5">
+            Acuerdos de renta
+          </h1>
+          <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 leading-snug mt-0.5">
+            Agua Tibia Surf School — listado y detalle de contratos
+          </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg dark:shadow-slate-950/80 p-6 mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Search className="w-5 h-5 text-gray-400 dark:text-slate-500 shrink-0" />
+        <div className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-lg shadow-md dark:shadow-slate-950/80 p-3 md:p-4 mb-2 md:mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Search className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0 md:w-5 md:h-5" />
             <input
               type="text"
               placeholder="Buscar por n.º de formulario (#12), nombre, email, teléfono o tabla…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-cyan-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-cyan-900/50 transition"
+              className="flex-1 px-3 py-1.5 text-sm border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:border-blue-500 dark:focus:border-cyan-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-cyan-900/50 transition md:px-4 md:py-2"
             />
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-2 md:mb-3">
             <button
               type="button"
               onClick={() => toggleStatsFilter('all')}
               title="Mostrar todos los acuerdos"
               className={`${statCardBase} bg-gradient-to-br from-blue-500 to-blue-600 text-white ${statCardRing(statsFilter === 'all')}`}
             >
-              <div className="text-3xl font-bold">{agreements.length}</div>
-              <div className="text-blue-100 mt-1">Total Acuerdos</div>
+              <div className="text-2xl font-bold tabular-nums sm:text-3xl">{agreements.length}</div>
+              <div className="text-blue-100 mt-0.5 text-xs sm:text-sm">Total Acuerdos</div>
             </button>
             <button
               type="button"
@@ -271,10 +275,10 @@ export default function AdminDashboard() {
               title="Filtrar solo activos en plazo"
               className={`${statCardBase} bg-gradient-to-br from-green-500 to-green-600 text-white ${statCardRing(statsFilter === 'ongoing')}`}
             >
-              <div className="text-3xl font-bold">
+              <div className="text-2xl font-bold tabular-nums sm:text-3xl">
                 {agreements.filter((a) => isRentalOngoing(a)).length}
               </div>
-              <div className="text-green-100 mt-1">Activos (en plazo)</div>
+              <div className="text-green-100 mt-0.5 text-xs sm:text-sm">Activos (en plazo)</div>
             </button>
             <button
               type="button"
@@ -282,10 +286,10 @@ export default function AdminDashboard() {
               title="Filtrar solo vencidos (fecha de retorno pasada)"
               className={`${statCardBase} bg-gradient-to-br from-red-500 to-red-600 text-white ${statCardRing(statsFilter === 'overdue')}`}
             >
-              <div className="text-3xl font-bold">
+              <div className="text-2xl font-bold tabular-nums sm:text-3xl">
                 {agreements.filter((a) => isReturnInPast(a)).length}
               </div>
-              <div className="text-red-100 mt-1">Vencidos</div>
+              <div className="text-red-100 mt-0.5 text-xs sm:text-sm">Vencidos</div>
             </button>
             <button
               type="button"
@@ -301,36 +305,36 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900/90 dark:border dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white dark:bg-slate-900/90 dark:border dark:border-slate-700 rounded-lg shadow-md overflow-hidden">
           <div className={agreementsTableScrollClass}>
             <table className="w-full min-w-[56rem]">
-              <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/80 border-b-2 border-gray-200 dark:border-slate-600">
+              <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
                 <tr>
-                  <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider w-24">
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider w-24 sm:px-4 sm:py-2.5 sm:text-xs">
                     N.º form.
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Cliente
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Tabla
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Renta
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Precio
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Pago
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Estado
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Fecha de retorno
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wider sm:px-6 sm:py-2.5 sm:text-xs">
                     Acciones
                   </th>
                 </tr>
@@ -340,17 +344,17 @@ export default function AdminDashboard() {
                   const rowBoards = getAgreementBoardNumbers(agreement);
                   return (
                   <tr key={agreement.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition">
-                    <td className="px-4 py-4 align-top">
+                    <td className="px-3 py-2 align-top sm:px-4 sm:py-2.5">
                       <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold tabular-nums text-sm">
                         {agreement.agreement_number != null ? agreement.agreement_number : '—'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       <div className="font-semibold text-gray-900 dark:text-slate-100">{agreement.name}</div>
                       <div className="text-sm text-gray-500 dark:text-slate-400">{agreement.email}</div>
                       <div className="text-sm text-gray-500 dark:text-slate-400">{agreement.phone}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       <div className="flex flex-col gap-1">
                         {rowBoards.map((num) => (
                           <div key={num} className="text-sm font-bold text-blue-600 dark:text-cyan-400">
@@ -362,18 +366,18 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       <div className="text-sm font-medium text-gray-900 dark:text-slate-100">
                         {agreement.rental_type.replace(/_/g, ' ')}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-slate-500">{agreement.rental_duration}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       <div className="text-lg font-bold text-green-600 dark:text-emerald-400">
                         ${Number(agreement.rental_price).toFixed(2)}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200 uppercase">
                         {agreement.payment_method}
                       </span>
@@ -389,7 +393,7 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       {(() => {
                         const badge = getAdminStatusBadge(agreement);
                         return (
@@ -401,10 +405,10 @@ export default function AdminDashboard() {
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-400">
+                    <td className="px-4 py-2 text-sm text-gray-600 dark:text-slate-400 sm:px-6 sm:py-2.5">
                       {formatDateTime(agreement.return_time)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 sm:px-6 sm:py-2.5">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -469,7 +473,7 @@ export default function AdminDashboard() {
                 <p className="text-sm font-semibold text-blue-100 dark:text-slate-300 tracking-wide uppercase">
                   Formulario n.º {selectedAgreement.agreement_number}
                 </p>
-                <h2 className="text-2xl font-bold mt-1">Detalles del acuerdo</h2>
+                <h2 className="text-lg sm:text-xl font-semibold tracking-tight mt-1">Detalles del acuerdo</h2>
               </div>
               <button
                 type="button"

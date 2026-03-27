@@ -168,15 +168,15 @@ export default function RentalArticlesInventoryPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="px-2 py-1 md:px-3 md:py-2">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-start gap-3 mb-2">
-          <Armchair className="w-10 h-10 text-amber-600 dark:text-amber-400 shrink-0 mt-1" aria-hidden />
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-slate-100">
+          <Armchair className="w-10 h-10 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden />
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
               Artículos de renta
             </h1>
-            <p className="text-gray-600 dark:text-slate-400 mt-2">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 leading-snug mt-0.5">
               Inventario de complementos para la playa o la escuela: <strong className="text-gray-800 dark:text-slate-200">sombrillas</strong>,{' '}
               <strong className="text-gray-800 dark:text-slate-200">sillas</strong>,{' '}
               <strong className="text-gray-800 dark:text-slate-200">toldos</strong>, etc. (no son tablas de surf).
@@ -189,7 +189,7 @@ export default function RentalArticlesInventoryPage() {
           onSubmit={handleAdd}
           className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8 mt-8"
         >
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">Nuevo artículo</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nuevo artículo</h2>
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="form-label" htmlFor="art-name">
@@ -349,7 +349,7 @@ export default function RentalArticlesInventoryPage() {
           aria-labelledby="edit-art-title"
         >
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-lg w-full border border-gray-200 dark:border-slate-600 p-6 max-h-[90vh] overflow-y-auto">
-            <h2 id="edit-art-title" className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-4">
+            <h2 id="edit-art-title" className="text-lg font-semibold tracking-tight text-gray-900 dark:text-slate-100 mb-4">
               Editar artículo
             </h2>
             <form onSubmit={handleSaveEdit}>

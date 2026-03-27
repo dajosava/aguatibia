@@ -198,12 +198,12 @@ export default function SurfboardInventoryPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="px-2 py-1 md:px-3 md:py-2">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-slate-100 mb-2">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100 mb-0.5">
           Inventario de tablas
         </h1>
-        <p className="text-gray-600 dark:text-slate-400 mb-8">
+        <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 leading-snug mt-0.5 mb-6 md:mb-7">
           Marca y número son los que verá el cliente al elegir tabla en el formulario de renta (solo tablas{' '}
           <strong className="text-gray-800 dark:text-slate-200">Disponible</strong>). Al enviarse un contrato con esa
           tabla, el inventario la pasa automáticamente a <strong className="text-gray-800 dark:text-slate-200">Rentada</strong>.
@@ -214,7 +214,7 @@ export default function SurfboardInventoryPage() {
           onSubmit={handleAdd}
           className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8"
         >
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">Nueva tabla</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nueva tabla</h2>
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="form-label" htmlFor="inv-brand">
@@ -466,7 +466,7 @@ export default function SurfboardInventoryPage() {
           aria-labelledby="edit-inv-title"
         >
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-lg w-full border border-gray-200 dark:border-slate-600 p-6 max-h-[90vh] overflow-y-auto">
-            <h2 id="edit-inv-title" className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-4">
+            <h2 id="edit-inv-title" className="text-lg font-semibold tracking-tight text-gray-900 dark:text-slate-100 mb-4">
               Editar tabla
             </h2>
             <form onSubmit={handleSaveEdit}>

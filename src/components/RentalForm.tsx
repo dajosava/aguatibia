@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Waves, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -17,6 +17,7 @@ import type { StoreProductRow } from '../types/storeProduct';
 import { parseStoreLineQuantity } from '../utils/storeLineQuantity';
 import { clampPublicStoreQuantities, maxQuantityForPublicStoreRow } from '../utils/storeRowMaxQuantity';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
+import { findSurfboardByInput, formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 
 function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null, quantity: 1 };
@@ -173,6 +174,26 @@ export default function RentalForm() {
     const timer = window.setTimeout(() => setIsSuccess(false), 5000);
     return () => window.clearTimeout(timer);
   }, [isSuccess]);
+
+  const selectedRentalOptionLabel = useMemo(() => {
+    const opt = RENTAL_OPTIONS.find(
+      (o) => o.type === formData.rental_type && o.duration === formData.rental_duration
+    );
+    if (!opt) return '—';
+    return t.rentalOptionLabels[opt.id] ?? opt.label;
+  }, [formData.rental_type, formData.rental_duration, t.rentalOptionLabels]);
+
+  const selectedBoardDisplayLabels = useMemo(
+    () =>
+      boardLines
+        .map((l) => l.boardNumber.trim())
+        .filter((n) => n.length > 0)
+        .map((n) => {
+          const row = findSurfboardByInput(surfboards, n);
+          return row ? formatSurfboardPublicLabel(row) : n;
+        }),
+    [boardLines, surfboards]
+  );
 
   const getRentalBasePrice = () => getRentalPriceForSelection(formData.rental_type, formData.rental_duration);
 
@@ -487,7 +508,34 @@ export default function RentalForm() {
                 className="form-input [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
+          </div>
 
+          <div>
+            <p className="form-label mb-4">{t.rentalOptionsSection}</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+              {RENTAL_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleRentalSelect(option)}
+                  className={`h-full min-h-[7.5rem] flex flex-col p-4 border-2 rounded-lg text-left transition ${
+                    formData.rental_type === option.type && formData.rental_duration === option.duration
+                      ? 'border-blue-500 bg-blue-50 shadow-md dark:border-cyan-500 dark:bg-slate-800/80'
+                      : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 dark:border-slate-600 dark:hover:border-cyan-600 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <span className="font-semibold text-gray-800 dark:text-slate-100 leading-snug flex-1">
+                    {t.rentalOptionLabels[option.id] ?? option.label}
+                  </span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-3 shrink-0">
+                    ${option.price}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
                 <label className="form-label mb-0">{t.boardsSection}</label>
@@ -566,48 +614,11 @@ export default function RentalForm() {
                 <option value="Martin">Martin</option>
               </select>
             </div>
-
-            <div className="md:col-span-2">
-              <label className="form-label" htmlFor="rental-customer-notes">
-                {t.customerComments}
-              </label>
-              <p className="text-xs text-gray-500 dark:text-slate-500 mb-2">{t.customerCommentsHint}</p>
-              <textarea
-                id="rental-customer-notes"
-                name="customer_notes"
-                value={formData.customer_notes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, customer_notes: e.target.value }))}
-                rows={4}
-                className="form-input min-h-[6rem] resize-y"
-                placeholder={t.customerCommentsPlaceholder}
-              />
-            </div>
           </div>
 
-          <div>
-            <p className="form-label mb-4">{t.rentalOptionsSection}</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-              {RENTAL_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleRentalSelect(option)}
-                  className={`h-full min-h-[7.5rem] flex flex-col p-4 border-2 rounded-lg text-left transition ${
-                    formData.rental_type === option.type && formData.rental_duration === option.duration
-                      ? 'border-blue-500 bg-blue-50 shadow-md dark:border-cyan-500 dark:bg-slate-800/80'
-                      : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 dark:border-slate-600 dark:hover:border-cyan-600 dark:hover:bg-slate-800/50'
-                  }`}
-                >
-                  <span className="font-semibold text-gray-800 dark:text-slate-100 leading-snug flex-1">
-                    {t.rentalOptionLabels[option.id] ?? option.label}
-                  </span>
-                  <span className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-3 shrink-0">
-                    ${option.price}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-sm text-gray-600 dark:text-slate-400 -mt-4 pt-2 border-t border-gray-100 dark:border-slate-800">
+            {t.optionalExtrasIntro}
+          </p>
 
           <div className="border-t border-gray-200 dark:border-slate-600 pt-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -705,30 +716,75 @@ export default function RentalForm() {
             ) : (
               <p className="text-sm text-gray-500 dark:text-slate-500 italic">{t.noStoreItems}</p>
             )}
+          </div>
 
-            <div className="mt-4 flex flex-wrap gap-4 justify-end items-baseline text-sm">
-              <span className="text-gray-600 dark:text-slate-400">
-                {t.pricePerBoard}{' '}
-                <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
-              </span>
-              {selectedBoardCount > 0 && (
-                <span className="text-gray-600 dark:text-slate-400">
-                  {t.rentLine(
-                    selectedBoardCount,
-                    getRentalBasePrice().toFixed(2),
-                    getRentalSubtotal().toFixed(2)
+          <div>
+            <label className="form-label" htmlFor="rental-customer-notes">
+              {t.customerComments}
+            </label>
+            <p className="text-xs text-gray-500 dark:text-slate-500 mb-2">{t.customerCommentsHint}</p>
+            <textarea
+              id="rental-customer-notes"
+              name="customer_notes"
+              value={formData.customer_notes}
+              onChange={(e) => setFormData((prev) => ({ ...prev, customer_notes: e.target.value }))}
+              rows={4}
+              className="form-input min-h-[6rem] resize-y"
+              placeholder={t.customerCommentsPlaceholder}
+            />
+          </div>
+
+          <div className="rounded-xl border-2 border-blue-200 dark:border-cyan-900/50 bg-blue-50/60 dark:bg-slate-800/70 p-5 sm:p-6 space-y-4 shadow-sm">
+            <h3 className="font-bold text-lg text-gray-900 dark:text-slate-100">{t.prePaymentSummaryTitle}</h3>
+            <dl className="text-sm space-y-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline gap-1">
+                <dt className="text-gray-600 dark:text-slate-400 shrink-0">{t.summaryRentalOption}</dt>
+                <dd className="font-semibold text-gray-900 dark:text-slate-100 text-right sm:max-w-[65%]">
+                  {selectedRentalOptionLabel}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-600 dark:text-slate-400 mb-1">{t.summaryBoards}</dt>
+                <dd className="text-gray-900 dark:text-slate-100">
+                  {selectedBoardDisplayLabels.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-0.5">
+                      {selectedBoardDisplayLabels.map((label, idx) => (
+                        <li key={`${label}-${idx}`}>{label}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-amber-800 dark:text-amber-200/90">{t.summaryBoardsNone}</span>
                   )}
+                </dd>
+              </div>
+            </dl>
+            <div className="border-t border-blue-200/80 dark:border-slate-600 pt-4 space-y-2 text-sm">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 justify-end items-baseline text-gray-600 dark:text-slate-400">
+                <span>
+                  {t.pricePerBoard}{' '}
+                  <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
                 </span>
-              )}
+                {selectedBoardCount > 0 && (
+                  <span>
+                    {t.rentLine(
+                      selectedBoardCount,
+                      getRentalBasePrice().toFixed(2),
+                      getRentalSubtotal().toFixed(2)
+                    )}
+                  </span>
+                )}
+              </div>
               {getStoreItemsSubtotal() > 0 && (
-                <span className="text-gray-600 dark:text-slate-400">
+                <div className="flex justify-end text-gray-600 dark:text-slate-400">
                   {t.storeTotal}{' '}
-                  <strong className="text-gray-900 dark:text-slate-100">${getStoreItemsSubtotal().toFixed(2)}</strong>
-                </span>
+                  <strong className="text-gray-900 dark:text-slate-100 ml-1">
+                    ${getStoreItemsSubtotal().toFixed(2)}
+                  </strong>
+                </div>
               )}
-              <span className="text-base font-bold text-blue-600 dark:text-cyan-400">
+              <div className="flex justify-end text-base font-bold text-blue-700 dark:text-cyan-300 pt-1">
                 {t.contractTotal} ${getContractTotal().toFixed(2)}
-              </span>
+              </div>
             </div>
           </div>
 

@@ -81,6 +81,12 @@ export type RentalFormStrings = {
   rentLine: (count: number, unit: string, subtotal: string) => string;
   storeTotal: string;
   contractTotal: string;
+  /** Intro antes de tienda + comentarios (paso opcional tras tablas). */
+  optionalExtrasIntro: string;
+  prePaymentSummaryTitle: string;
+  summaryRentalOption: string;
+  summaryBoards: string;
+  summaryBoardsNone: string;
   paymentMethod: string;
   payCash: string;
   payCard: string;
@@ -175,6 +181,11 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
       `Rental (${count} ${count === 1 ? 'board' : 'boards'}): $${unit} × ${count} = $${subtotal}`,
     storeTotal: 'Store:',
     contractTotal: 'Contract total:',
+    optionalExtrasIntro: 'Anything else? Optional shop items or a note for our team.',
+    prePaymentSummaryTitle: 'Confirm your rental',
+    summaryRentalOption: 'Session / rental type',
+    summaryBoards: 'Boards',
+    summaryBoardsNone: 'No boards selected yet.',
     paymentMethod: 'Payment method *',
     payCash: 'Cash',
     payCard: 'Card',
@@ -276,6 +287,11 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
       `Renta (${count} ${count === 1 ? 'tabla' : 'tablas'}): $${unit} × ${count} = $${subtotal}`,
     storeTotal: 'Tienda:',
     contractTotal: 'Total contrato:',
+    optionalExtrasIntro: '¿Algo más? Productos de tienda o un comentario para el equipo (opcional).',
+    prePaymentSummaryTitle: 'Confirma tu renta',
+    summaryRentalOption: 'Tipo de sesión / renta',
+    summaryBoards: 'Tablas',
+    summaryBoardsNone: 'Aún no has elegido tablas.',
     paymentMethod: 'Método de pago *',
     payCash: 'Efectivo',
     payCard: 'Tarjeta',

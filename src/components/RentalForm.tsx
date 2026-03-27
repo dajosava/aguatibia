@@ -399,23 +399,23 @@ export default function RentalForm() {
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-transparent dark:border-slate-700">
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 p-8 text-white border-b border-blue-900/30">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-            <div className="flex items-center justify-center gap-3 flex-1">
-              <Waves className="w-12 h-12 shrink-0" />
+        <div className="relative bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 px-4 pt-12 pb-8 sm:px-8 sm:pt-14 text-white border-b border-blue-900/30">
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+              className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-sm font-semibold transition"
+            >
+              {lang === 'en' ? t.langSwitchToEs : t.langSwitchToEn}
+            </button>
+          </div>
+          <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Waves className="w-12 h-12 shrink-0" aria-hidden />
               <h1 className="text-4xl font-bold">Agua Tibia</h1>
             </div>
-            <div className="flex justify-center sm:justify-end sm:pt-1">
-              <button
-                type="button"
-                onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-                className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-sm font-semibold transition"
-              >
-                {lang === 'en' ? t.langSwitchToEs : t.langSwitchToEn}
-              </button>
-            </div>
+            <p className="text-xl opacity-95 leading-snug">{t.headerSubtitle}</p>
           </div>
-          <p className="text-center text-xl opacity-95">{t.headerSubtitle}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">

@@ -153,11 +153,18 @@ export default function SurfboardCombobox({
 
     if (!Number.isFinite(top) || !Number.isFinite(maxHeight)) return;
 
+    const maxPanelWidth = Math.max(0, vw - margin * 2);
+    const minDesired = Math.min(280, maxPanelWidth || r.width);
+    const width = Math.min(
+      maxPanelWidth,
+      Math.max(r.width, Number.isFinite(minDesired) && minDesired > 0 ? minDesired : r.width)
+    );
+
     let left = r.left;
-    const width = Math.max(r.width, 280);
     if (left + width > vw - margin) {
       left = Math.max(margin, vw - margin - width);
     }
+    if (left < margin) left = margin;
 
     setPopover({ top, left, width, maxHeight });
   }, []);
@@ -251,7 +258,7 @@ export default function SurfboardCombobox({
         {boards.length > 0 && !disabled && (
           <button
             type="button"
-            className="shrink-0 inline-flex items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50 px-2 text-gray-700 transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="shrink-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50 px-2 text-gray-700 transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             aria-label={open ? labels.ariaCloseList : labels.ariaOpenList}
             aria-expanded={showPanel}
             aria-controls={showPanel ? listId : undefined}

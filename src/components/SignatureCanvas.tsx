@@ -99,12 +99,12 @@ export default function SignatureCanvas({ onSignatureChange, value }: SignatureC
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full max-w-full overflow-hidden rounded-lg">
       <canvas
         ref={canvasRef}
         width={600}
         height={200}
-        className="border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 cursor-crosshair w-full touch-none"
+        className="border-2 border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 cursor-crosshair block w-full h-auto min-h-[140px] max-h-[240px] sm:max-h-none touch-none"
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

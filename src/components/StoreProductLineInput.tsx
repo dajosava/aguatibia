@@ -126,11 +126,18 @@ export default function StoreProductLineInput({
 
     if (!Number.isFinite(top) || !Number.isFinite(maxHeight)) return;
 
+    const maxPanelWidth = Math.max(0, vw - margin * 2);
+    const minDesired = Math.min(280, maxPanelWidth || r.width);
+    const width = Math.min(
+      maxPanelWidth,
+      Math.max(r.width, Number.isFinite(minDesired) && minDesired > 0 ? minDesired : r.width)
+    );
+
     let left = r.left;
-    const width = Math.max(r.width, 320);
     if (left + width > vw - margin) {
       left = Math.max(margin, vw - margin - width);
     }
+    if (left < margin) left = margin;
 
     setPopover({
       top,
@@ -253,7 +260,7 @@ export default function StoreProductLineInput({
 
   return (
     <div className="relative" ref={wrapRef}>
-      <div className="flex gap-1">
+      <div className="flex gap-1 min-w-0">
         <input
           type="text"
           value={row.productName}
@@ -277,7 +284,7 @@ export default function StoreProductLineInput({
         {catalog.length > 0 && (
           <button
             type="button"
-            className="shrink-0 inline-flex items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50 px-2 text-gray-700 transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="shrink-0 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50 px-2 text-gray-700 transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             aria-label={open ? 'Cerrar lista de productos' : 'Abrir lista de productos'}
             aria-expanded={showPanel}
             aria-controls={showPanel ? listId : undefined}

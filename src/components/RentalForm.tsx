@@ -379,15 +379,15 @@ export default function RentalForm() {
 
   if (isSuccess) {
     return (
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-12 text-center border border-transparent dark:border-slate-700">
-          <CheckCircle2 className="w-20 h-20 text-green-500 dark:text-emerald-400 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-4">{t.successTitle}</h2>
-          <p className="text-gray-600 dark:text-slate-400 text-lg">{t.successBody}</p>
+      <div className="max-w-4xl mx-auto px-3 py-6 sm:p-8 overflow-x-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-xl md:rounded-2xl shadow-2xl p-6 sm:p-12 text-center border border-transparent dark:border-slate-700">
+          <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-green-500 dark:text-emerald-400 mx-auto mb-4 sm:mb-6" />
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-slate-100 mb-3 sm:mb-4">{t.successTitle}</h2>
+          <p className="text-gray-600 dark:text-slate-400 text-base sm:text-lg">{t.successBody}</p>
           <button
             type="button"
             onClick={() => setIsSuccess(false)}
-            className="mt-8 px-8 py-3 bg-blue-600 dark:bg-cyan-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-cyan-600 transition font-semibold"
+            className="mt-6 sm:mt-8 w-full sm:w-auto px-8 py-3 min-h-[48px] bg-blue-600 dark:bg-cyan-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-cyan-600 transition font-semibold"
           >
             {t.successAnother}
           </button>
@@ -397,29 +397,29 @@ export default function RentalForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-transparent dark:border-slate-700">
-        <div className="relative bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 px-4 pt-12 pb-8 sm:px-8 sm:pt-14 text-white border-b border-blue-900/30">
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
+    <div className="max-w-4xl mx-auto px-3 py-3 sm:p-4 md:p-8 overflow-x-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl md:rounded-2xl shadow-2xl overflow-hidden border border-transparent dark:border-slate-700">
+        <div className="relative bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-950 dark:to-slate-900 px-3 pt-14 pb-6 sm:px-8 sm:pt-14 sm:pb-8 text-white border-b border-blue-900/30">
+          <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
             <button
               type="button"
               onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-              className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-sm font-semibold transition"
+              className="px-3 py-2 sm:px-4 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-xs sm:text-sm font-semibold transition min-h-[40px]"
             >
               {lang === 'en' ? t.langSwitchToEs : t.langSwitchToEn}
             </button>
           </div>
           <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Waves className="w-12 h-12 shrink-0" aria-hidden />
-              <h1 className="text-4xl font-bold">Agua Tibia</h1>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
+              <Waves className="w-10 h-10 sm:w-12 sm:h-12 shrink-0" aria-hidden />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">Agua Tibia</h1>
             </div>
-            <p className="text-xl opacity-95 leading-snug">{t.headerSubtitle}</p>
+            <p className="text-base sm:text-lg md:text-xl opacity-95 leading-snug px-1">{t.headerSubtitle}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
-          <div className="grid md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label className="form-label" htmlFor="rental-name">
                 {t.fullName}
@@ -511,23 +511,23 @@ export default function RentalForm() {
           </div>
 
           <div>
-            <p className="form-label mb-4">{t.rentalOptionsSection}</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+            <p className="form-label mb-3 sm:mb-4">{t.rentalOptionsSection}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 auto-rows-fr">
               {RENTAL_OPTIONS.map((option) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => handleRentalSelect(option)}
-                  className={`h-full min-h-[7.5rem] flex flex-col p-4 border-2 rounded-lg text-left transition ${
+                  className={`h-full min-h-[6.5rem] sm:min-h-[7.5rem] flex flex-col p-3 sm:p-4 border-2 rounded-lg text-left transition touch-manipulation ${
                     formData.rental_type === option.type && formData.rental_duration === option.duration
                       ? 'border-blue-500 bg-blue-50 shadow-md dark:border-cyan-500 dark:bg-slate-800/80'
                       : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50 dark:border-slate-600 dark:hover:border-cyan-600 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <span className="font-semibold text-gray-800 dark:text-slate-100 leading-snug flex-1">
+                  <span className="font-semibold text-sm sm:text-base text-gray-800 dark:text-slate-100 leading-snug flex-1">
                     {t.rentalOptionLabels[option.id] ?? option.label}
                   </span>
-                  <span className="text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-3 shrink-0">
+                  <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-cyan-400 mt-2 sm:mt-3 shrink-0">
                     ${option.price}
                   </span>
                 </button>
@@ -535,7 +535,7 @@ export default function RentalForm() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="md:col-span-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
                 <label className="form-label mb-0">{t.boardsSection}</label>
@@ -620,75 +620,71 @@ export default function RentalForm() {
             {t.optionalExtrasIntro}
           </p>
 
-          <div className="border-t border-gray-200 dark:border-slate-600 pt-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="border-t border-gray-200 dark:border-slate-600 pt-6 sm:pt-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
               <p className="form-label mb-0">{t.storeItemsSection}</p>
               <button
                 type="button"
                 onClick={() => setStoreItems((prev) => [...prev, newStoreLine()])}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 hover:bg-gray-50 dark:hover:bg-slate-800/50 font-medium text-sm transition"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 hover:bg-gray-50 dark:hover:bg-slate-800/50 font-medium text-sm transition touch-manipulation w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
                 {t.addProduct}
               </button>
             </div>
-            <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">{t.storeHelp}</p>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-4 break-words">{t.storeHelp}</p>
 
             {storeItems.length > 0 ? (
-              <div className="overflow-x-auto rounded-lg border-2 border-gray-200 dark:border-slate-600">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-slate-800/80">
-                    <tr>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 min-w-[28rem] w-[28rem]">
-                        {t.storeTableProduct}
-                      </th>
-                      <th className="text-center px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-24">
-                        {t.storeTableQuantity}
-                      </th>
-                      <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-36">
-                        {t.storeTableLineTotal}
-                      </th>
-                      <th className="w-12 px-1" aria-label={t.removeRowAria} />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
-                    {storeItems.map((row) => (
-                      <tr key={row.id}>
-                        <td className="px-3 py-2 align-top min-w-[28rem] w-[28rem]">
-                          <StoreProductLineInput
-                            row={row}
-                            catalog={productCatalog}
-                            mode="catalog"
-                            catalogUi={{
-                              placeholder: t.storeCatalogSearchPlaceholder,
-                              noResults: t.storeCatalogNoMatch,
-                            }}
-                            onChange={(lineId, patch) =>
-                              setStoreItems((prev) =>
-                                prev.map((r) => (r.id === lineId ? { ...r, ...patch } : r))
-                              )
+              <>
+                <div className="lg:hidden space-y-4">
+                  {storeItems.map((row) => (
+                    <div
+                      key={row.id}
+                      className="rounded-lg border-2 border-gray-200 dark:border-slate-600 bg-gray-50/50 dark:bg-slate-800/30 p-3 space-y-3 min-w-0"
+                    >
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold text-gray-600 dark:text-slate-400 block mb-1.5">
+                          {t.storeTableProduct}
+                        </span>
+                        <StoreProductLineInput
+                          row={row}
+                          catalog={productCatalog}
+                          mode="catalog"
+                          catalogUi={{
+                            placeholder: t.storeCatalogSearchPlaceholder,
+                            noResults: t.storeCatalogNoMatch,
+                          }}
+                          onChange={(lineId, patch) =>
+                            setStoreItems((prev) =>
+                              prev.map((r) => (r.id === lineId ? { ...r, ...patch } : r))
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                          <span className="text-xs font-semibold text-gray-600 dark:text-slate-400 block mb-1.5">
+                            {t.storeTableQuantity}
+                          </span>
+                          <StoreLineQuantityStepper
+                            value={row.quantity ?? 1}
+                            max={maxQuantityForPublicStoreRow(row, storeItems, productCatalog)}
+                            onChange={(next) =>
+                              setStoreItems((prev) => {
+                                const updated = prev.map((r) =>
+                                  r.id === row.id ? { ...r, quantity: next } : r
+                                );
+                                return clampPublicStoreQuantities(updated, productCatalog);
+                              })
                             }
+                            ariaLabel={t.storeTableQuantity}
                           />
-                        </td>
-                        <td className="px-3 py-2 align-top text-center">
-                          <div className="flex justify-center">
-                            <StoreLineQuantityStepper
-                              value={row.quantity ?? 1}
-                              max={maxQuantityForPublicStoreRow(row, storeItems, productCatalog)}
-                              onChange={(next) =>
-                                setStoreItems((prev) => {
-                                  const updated = prev.map((r) =>
-                                    r.id === row.id ? { ...r, quantity: next } : r
-                                  );
-                                  return clampPublicStoreQuantities(updated, productCatalog);
-                                })
-                              }
-                              ariaLabel={t.storeTableQuantity}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 align-top">
-                          <span className="inline-block py-2 text-sm tabular-nums text-gray-800 dark:text-slate-200">
+                        </div>
+                        <div className="text-right min-w-0">
+                          <span className="text-xs font-semibold text-gray-600 dark:text-slate-400 block mb-1.5">
+                            {t.storeTableLineTotal}
+                          </span>
+                          <span className="inline-block py-1 text-base tabular-nums font-semibold text-gray-800 dark:text-slate-200">
                             {(() => {
                               const n = parseMoneyInput(row.price);
                               const q = parseStoreLineQuantity(row) ?? 1;
@@ -697,22 +693,99 @@ export default function RentalForm() {
                                 : '—';
                             })()}
                           </span>
-                        </td>
-                        <td className="px-1 py-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setStoreItems((prev) => prev.filter((r) => r.id !== row.id))}
-                            className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                            aria-label={t.removeRowAria}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setStoreItems((prev) => prev.filter((r) => r.id !== row.id))}
+                          className="ml-auto inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition touch-manipulation"
+                          aria-label={t.removeRowAria}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden lg:block overflow-x-auto rounded-lg border-2 border-gray-200 dark:border-slate-600">
+                  <table className="w-full min-w-0 text-sm table-fixed">
+                    <thead className="bg-gray-50 dark:bg-slate-800/80">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 min-w-0 w-[45%]">
+                          {t.storeTableProduct}
+                        </th>
+                        <th className="text-center px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-28">
+                          {t.storeTableQuantity}
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold text-gray-700 dark:text-slate-200 w-32">
+                          {t.storeTableLineTotal}
+                        </th>
+                        <th className="w-14 px-1 shrink-0" aria-label={t.removeRowAria} />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
+                      {storeItems.map((row) => (
+                        <tr key={row.id}>
+                          <td className="px-3 py-2 align-top min-w-0">
+                            <StoreProductLineInput
+                              row={row}
+                              catalog={productCatalog}
+                              mode="catalog"
+                              catalogUi={{
+                                placeholder: t.storeCatalogSearchPlaceholder,
+                                noResults: t.storeCatalogNoMatch,
+                              }}
+                              onChange={(lineId, patch) =>
+                                setStoreItems((prev) =>
+                                  prev.map((r) => (r.id === lineId ? { ...r, ...patch } : r))
+                                )
+                              }
+                            />
+                          </td>
+                          <td className="px-3 py-2 align-top text-center">
+                            <div className="flex justify-center">
+                              <StoreLineQuantityStepper
+                                value={row.quantity ?? 1}
+                                max={maxQuantityForPublicStoreRow(row, storeItems, productCatalog)}
+                                onChange={(next) =>
+                                  setStoreItems((prev) => {
+                                    const updated = prev.map((r) =>
+                                      r.id === row.id ? { ...r, quantity: next } : r
+                                    );
+                                    return clampPublicStoreQuantities(updated, productCatalog);
+                                  })
+                                }
+                                ariaLabel={t.storeTableQuantity}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 align-top">
+                            <span className="inline-block py-2 text-sm tabular-nums text-gray-800 dark:text-slate-200">
+                              {(() => {
+                                const n = parseMoneyInput(row.price);
+                                const q = parseStoreLineQuantity(row) ?? 1;
+                                return row.catalogProductId && Number.isFinite(n)
+                                  ? `$${(n * q).toFixed(2)}`
+                                  : '—';
+                              })()}
+                            </span>
+                          </td>
+                          <td className="px-1 py-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setStoreItems((prev) => prev.filter((r) => r.id !== row.id))}
+                              className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                              aria-label={t.removeRowAria}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               <p className="text-sm text-gray-500 dark:text-slate-500 italic">{t.noStoreItems}</p>
             )}
@@ -759,13 +832,13 @@ export default function RentalForm() {
               </div>
             </dl>
             <div className="border-t border-blue-200/80 dark:border-slate-600 pt-4 space-y-2 text-sm">
-              <div className="flex flex-wrap gap-x-4 gap-y-1 justify-end items-baseline text-gray-600 dark:text-slate-400">
-                <span>
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-x-4 gap-y-2 sm:justify-end sm:items-baseline text-gray-600 dark:text-slate-400 text-left sm:text-right">
+                <span className="break-words">
                   {t.pricePerBoard}{' '}
                   <strong className="text-gray-900 dark:text-slate-100">${getRentalBasePrice().toFixed(2)}</strong>
                 </span>
                 {selectedBoardCount > 0 && (
-                  <span>
+                  <span className="break-words">
                     {t.rentLine(
                       selectedBoardCount,
                       getRentalBasePrice().toFixed(2),
@@ -868,7 +941,7 @@ export default function RentalForm() {
             disabled={
               isSubmitting || surfboardsLoading || surfboards.length === 0
             }
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-cyan-800 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-cyan-700 dark:hover:from-blue-900 dark:hover:to-cyan-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="w-full min-h-[52px] bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-cyan-800 text-white py-3.5 sm:py-4 rounded-lg font-bold text-base sm:text-lg hover:from-blue-700 hover:to-cyan-700 dark:hover:from-blue-900 dark:hover:to-cyan-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-manipulation"
           >
             {isSubmitting ? t.submitting : t.submit}
           </button>

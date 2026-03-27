@@ -125,24 +125,32 @@ function RootLayout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
       <nav className="bg-white shadow-md border-b-2 border-blue-100 dark:bg-slate-900 dark:border-slate-700 dark:shadow-slate-950/50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              <Link to="/" className="shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                <img
-                  src="/aguatibialogo.png"
-                  alt="Agua Tibia"
-                  className="h-16 sm:h-20 md:h-24 lg:h-[6.5rem] w-auto max-w-[min(100%,720px)] object-contain shrink-0 rounded-lg"
-                />
-              </Link>
-              <div className="min-w-0 pt-0.5">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-row items-start gap-3 sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <div className="flex shrink-0 flex-col items-center gap-2">
+                <Link
+                  to="/"
+                  className="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <img
+                    src="/aguatibialogo.png"
+                    alt="Agua Tibia"
+                    className="h-14 w-auto object-contain rounded-lg sm:h-20 md:h-24 lg:h-[6.5rem] max-w-[13rem] sm:max-w-[min(100%,720px)]"
+                  />
+                </Link>
+                <div className="sm:hidden">
+                  <ThemeToggle />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <h1 className="text-lg font-bold leading-tight text-gray-900 dark:text-slate-100 sm:text-2xl">
                   Agua Tibia Surf School
                 </h1>
                 <HeaderTideStatus />
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 justify-end">
+            <div className="hidden shrink-0 sm:flex sm:items-center sm:justify-end">
               <ThemeToggle />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import RentalForm from './components/RentalForm';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
@@ -11,7 +11,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PublicFormLangProvider, usePublicFormLang } from './contexts/PublicFormLangContext';
 import type { FormPageFooterStrings } from './config/rentalFormLocales';
 import { FORM_PAGE_FOOTER_STRINGS } from './config/rentalFormLocales';
-import { FileText, Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import ThemeToggle from './components/ThemeToggle';
 import HeaderTideStatus from './components/HeaderTideStatus';
 import { useCostaRicaClock } from './hooks/useCostaRicaClock';
@@ -144,20 +144,6 @@ function RootLayout() {
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
               <ThemeToggle />
-              <NavLink
-                to="/"
-                end
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-md dark:bg-cyan-600'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                  }`
-                }
-              >
-                <FileText className="w-5 h-5" />
-                Formulario
-              </NavLink>
             </div>
           </div>
         </div>

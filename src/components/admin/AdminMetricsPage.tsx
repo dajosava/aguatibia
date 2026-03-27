@@ -79,14 +79,19 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
+function initialCustomRangeFrom(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 29);
+  return formatYmdLocal(d);
+}
+
 export default function AdminMetricsPage() {
   const [timeSelection, setTimeSelection] = useState<MetricsTimeSelection>('90d');
-  const [customFrom, setCustomFrom] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 29);
-    return formatYmdLocal(d);
-  });
-  const [customTo, setCustomTo] = useState(() => formatYmdLocal(new Date()));
+  const [customFromDraft, setCustomFromDraft] = useState(initialCustomRangeFrom);
+  const [customToDraft, setCustomToDraft] = useState(() => formatYmdLocal(new Date()));
+  /** Rango que aplica al filtro (tras «Aplicar» o al elegir «Rango personalizado»). */
+  const [customFromApplied, setCustomFromApplied] = useState(initialCustomRangeFrom);
+  const [customToApplied, setCustomToApplied] = useState(() => formatYmdLocal(new Date()));
   const [agreements, setAgreements] = useState<RentalAgreementWithStoreItems[]>([]);
   const [inventory, setInventory] = useState<SurfboardInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,16 +118,20 @@ export default function AdminMetricsPage() {
 
   const filtered = useMemo(() => {
     if (timeSelection === 'custom') {
-      return filterAgreementsByDateRange(agreements, customFrom, customTo);
+      return filterAgreementsByDateRange(agreements, customFromApplied, customToApplied);
     }
     return filterAgreementsByPeriod(agreements, timeSelection);
-  }, [agreements, timeSelection, customFrom, customTo]);
+  }, [agreements, timeSelection, customFromApplied, customToApplied]);
 
   const customRangeInvalid =
     timeSelection === 'custom' &&
-    customFrom.trim() !== '' &&
-    customTo.trim() !== '' &&
-    new Date(`${customFrom}T00:00:00`).getTime() > new Date(`${customTo}T00:00:00`).getTime();
+    customFromDraft.trim() !== '' &&
+    customToDraft.trim() !== '' &&
+    customFromDraft > customToDraft;
+
+  const customRangeDirty =
+    timeSelection === 'custom' &&
+    (customFromDraft !== customFromApplied || customToDraft !== customToApplied);
   const model = useMemo(() => buildMetricsModel(filtered, inventory), [filtered, inventory]);
 
   const topBoardsChart = useMemo(
@@ -203,7 +212,7 @@ export default function AdminMetricsPage() {
           {timeSelection === 'custom' ? (
             <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-3 dark:border-slate-600 dark:bg-slate-800/40 w-full sm:max-w-xl">
               <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
-                Fecha de registro del acuerdo (en tu zona horaria)
+                Fecha de registro del acuerdo (día en Costa Rica)
               </p>
               <div className="flex flex-wrap items-end gap-3">
                 <div className="flex flex-col gap-1 min-w-[10rem]">
@@ -213,8 +222,8 @@ export default function AdminMetricsPage() {
                   <input
                     id="metrics-custom-from"
                     type="date"
-                    value={customFrom}
-                    onChange={(e) => setCustomFrom(e.target.value)}
+                    value={customFromDraft}
+                    onChange={(e) => setCustomFromDraft(e.target.value)}
                     className="form-input py-2 text-sm [color-scheme:light] dark:[color-scheme:dark]"
                   />
                 </div>
@@ -225,15 +234,30 @@ export default function AdminMetricsPage() {
                   <input
                     id="metrics-custom-to"
                     type="date"
-                    value={customTo}
-                    onChange={(e) => setCustomTo(e.target.value)}
+                    value={customToDraft}
+                    onChange={(e) => setCustomToDraft(e.target.value)}
                     className="form-input py-2 text-sm [color-scheme:light] dark:[color-scheme:dark]"
                   />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomFromApplied(customFromDraft);
+                    setCustomToApplied(customToDraft);
+                  }}
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 dark:bg-cyan-700 dark:hover:bg-cyan-600"
+                >
+                  Aplicar rango
+                </button>
               </div>
+              {customRangeDirty ? (
+                <p className="text-xs text-amber-800 dark:text-amber-200/90">
+                  Los cambios de fecha no se aplican hasta que pulses «Aplicar rango».
+                </p>
+              ) : null}
               {customRangeInvalid ? (
                 <p className="text-xs text-amber-800 dark:text-amber-200/90">
-                  «Desde» es posterior a «Hasta»; los datos se filtran intercambiando las fechas.
+                  «Desde» es posterior a «Hasta»; al aplicar se usarán las fechas en orden correcto.
                 </p>
               ) : null}
             </div>

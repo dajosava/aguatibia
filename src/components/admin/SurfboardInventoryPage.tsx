@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import type { SurfboardInventoryRow, SurfboardStatus } from '../../types/surfboardInventory';
 import { SURFBOARD_STATUS_VALUES } from '../../types/surfboardInventory';
@@ -9,6 +9,15 @@ import {
   updateSurfboard,
 } from '../../services/surfboardInventoryService';
 import { formatSurfboardPublicLabel } from '../../utils/surfboardDisplay';
+
+type InventoryStatusFilter = 'all' | 'Disponible' | 'Rentada' | 'En mantenimiento' | 'otras';
+
+function rowMatchesInventoryFilter(row: SurfboardInventoryRow, filter: InventoryStatusFilter): boolean {
+  if (filter === 'all') return true;
+  const s = row.status ?? 'Disponible';
+  if (filter === 'otras') return s !== 'Disponible' && s !== 'Rentada' && s !== 'En mantenimiento';
+  return s === filter;
+}
 
 function statusBadgeClass(status: string): string {
   switch (status) {
@@ -39,6 +48,7 @@ export default function SurfboardInventoryPage() {
   const [editNumber, setEditNumber] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editStatus, setEditStatus] = useState<SurfboardStatus>('Disponible');
+  const [statusFilter, setStatusFilter] = useState<InventoryStatusFilter>('all');
 
   const load = useCallback(async () => {
     setError(null);
@@ -56,6 +66,36 @@ export default function SurfboardInventoryPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const statusCounts = useMemo(() => {
+    let disponible = 0;
+    let rentada = 0;
+    let mantenimiento = 0;
+    let otras = 0;
+    for (const r of rows) {
+      const s = r.status ?? 'Disponible';
+      if (s === 'Disponible') disponible++;
+      else if (s === 'Rentada') rentada++;
+      else if (s === 'En mantenimiento') mantenimiento++;
+      else otras++;
+    }
+    return { disponible, rentada, mantenimiento, otras, total: rows.length };
+  }, [rows]);
+
+  const filteredRows = useMemo(
+    () => rows.filter((r) => rowMatchesInventoryFilter(r, statusFilter)),
+    [rows, statusFilter]
+  );
+
+  useEffect(() => {
+    if (statusFilter === 'otras' && statusCounts.otras === 0) {
+      setStatusFilter('all');
+    }
+  }, [statusFilter, statusCounts.otras]);
+
+  const pickFilter = (f: InventoryStatusFilter) => {
+    setStatusFilter((prev) => (prev === f ? 'all' : f));
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,6 +290,101 @@ export default function SurfboardInventoryPage() {
         )}
 
         <div className="bg-white dark:bg-slate-900/90 dark:border dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
+          <div className="px-4 py-4 sm:px-5 border-b border-gray-200 dark:border-slate-600 bg-gray-50/90 dark:bg-slate-800/60">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-1">
+              Resumen por estado · pulsa para filtrar la tabla
+            </p>
+            <p className="text-xs text-gray-500 dark:text-slate-500 mb-3">
+              Pulsa de nuevo el mismo filtro para ver todas las tablas.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
+                  statusFilter === 'all'
+                    ? 'border-gray-500 bg-gray-200 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-slate-400 dark:bg-slate-700 dark:ring-cyan-400 dark:ring-offset-slate-800'
+                    : 'border-gray-300 bg-white hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-900/80 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span className="text-sm font-medium text-gray-800 dark:text-slate-200">Todas</span>
+                <span className="text-xl font-bold tabular-nums text-gray-900 dark:text-slate-100">
+                  {statusCounts.total}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => pickFilter('Disponible')}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
+                  statusFilter === 'Disponible'
+                    ? 'border-emerald-400 bg-emerald-50 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-emerald-600 dark:bg-emerald-950/50 dark:ring-cyan-400 dark:ring-offset-slate-800'
+                    : 'border-emerald-200 bg-emerald-50 hover:brightness-95 dark:border-emerald-900/50 dark:bg-emerald-950/35 dark:hover:bg-emerald-950/50'
+                }`}
+              >
+                <span className="text-sm font-medium text-emerald-900 dark:text-emerald-200">Disponibles</span>
+                <span className="text-xl font-bold tabular-nums text-emerald-800 dark:text-emerald-100">
+                  {statusCounts.disponible}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => pickFilter('Rentada')}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
+                  statusFilter === 'Rentada'
+                    ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-blue-600 dark:bg-blue-950/50 dark:ring-cyan-400 dark:ring-offset-slate-800'
+                    : 'border-blue-200 bg-blue-50 hover:brightness-95 dark:border-blue-900/50 dark:bg-blue-950/40 dark:hover:bg-blue-950/55'
+                }`}
+              >
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-200">Rentadas</span>
+                <span className="text-xl font-bold tabular-nums text-blue-800 dark:text-blue-100">
+                  {statusCounts.rentada}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => pickFilter('En mantenimiento')}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
+                  statusFilter === 'En mantenimiento'
+                    ? 'border-amber-400 bg-amber-50 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-amber-600 dark:bg-amber-950/50 dark:ring-cyan-400 dark:ring-offset-slate-800'
+                    : 'border-amber-200 bg-amber-50 hover:brightness-95 dark:border-amber-900/50 dark:bg-amber-950/35 dark:hover:bg-amber-950/50'
+                }`}
+              >
+                <span className="text-sm font-medium text-amber-900 dark:text-amber-200">En mantenimiento</span>
+                <span className="text-xl font-bold tabular-nums text-amber-900 dark:text-amber-100">
+                  {statusCounts.mantenimiento}
+                </span>
+              </button>
+              {statusCounts.otras > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => pickFilter('otras')}
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
+                    statusFilter === 'otras'
+                      ? 'border-slate-400 bg-slate-100 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-slate-500 dark:bg-slate-800 dark:ring-cyan-400 dark:ring-offset-slate-800'
+                      : 'border-slate-200 bg-slate-100 hover:brightness-95 dark:border-slate-600 dark:bg-slate-800/80 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Otras (p. ej. vendida)</span>
+                  <span className="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100">
+                    {statusCounts.otras}
+                  </span>
+                </button>
+              ) : null}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-slate-500 mt-3">
+              {statusFilter === 'all' ? (
+                <>
+                  Total de tablas en inventario:{' '}
+                  <strong className="text-gray-800 dark:text-slate-200">{statusCounts.total}</strong>
+                </>
+              ) : (
+                <>
+                  Mostrando <strong className="text-gray-800 dark:text-slate-200">{filteredRows.length}</strong> de{' '}
+                  <strong className="text-gray-800 dark:text-slate-200">{statusCounts.total}</strong> tablas
+                </>
+              )}
+            </p>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
@@ -272,8 +407,15 @@ export default function SurfboardInventoryPage() {
                       No hay tablas registradas. Añade la primera arriba.
                     </td>
                   </tr>
+                ) : filteredRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                      Ninguna tabla coincide con este filtro. Pulsa «Todas» o el mismo contador otra vez para ver
+                      todo el inventario.
+                    </td>
+                  </tr>
                 ) : (
-                  rows.map((row) => (
+                  filteredRows.map((row) => (
                     <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50">
                       <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">
                         {(row.brand ?? '').trim() || '—'}

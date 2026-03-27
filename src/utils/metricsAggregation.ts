@@ -23,28 +23,33 @@ export function filterAgreementsByPeriod(
   return rows.filter((r) => new Date(r.created_at).getTime() >= start);
 }
 
-/** Fechas locales `YYYY-MM-DD`; incluye todo el día final hasta 23:59:59.999. Filtra por `created_at` del acuerdo. */
+/** Fecha de calendario `YYYY-MM-DD` del instante en la zona horaria (p. ej. día del acuerdo en Costa Rica). */
+export function toYmdInTimeZone(iso: string, timeZone: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
+/** Fechas `YYYY-MM-DD` del selector (día calendario). Incluye acuerdos cuyo `created_at` cae en ese día en la zona. */
 export function filterAgreementsByDateRange(
   rows: RentalAgreementWithStoreItems[],
   fromYmd: string,
-  toYmd: string
+  toYmd: string,
+  timeZone = 'America/Costa_Rica'
 ): RentalAgreementWithStoreItems[] {
   const fromRaw = (fromYmd ?? '').trim();
   const toRaw = (toYmd ?? '').trim();
   if (!fromRaw || !toRaw) return rows;
-  const from = new Date(`${fromRaw}T00:00:00`);
-  const to = new Date(`${toRaw}T23:59:59.999`);
-  let fromMs = from.getTime();
-  let toMs = to.getTime();
-  if (Number.isNaN(fromMs) || Number.isNaN(toMs)) return rows;
-  if (fromMs > toMs) {
-    const t = fromMs;
-    fromMs = toMs;
-    toMs = t;
-  }
+  const [a, b] = [fromRaw, toRaw].sort();
   return rows.filter((r) => {
-    const t = new Date(r.created_at).getTime();
-    return t >= fromMs && t <= toMs;
+    const ymd = toYmdInTimeZone(r.created_at, timeZone);
+    if (!ymd) return false;
+    return ymd >= a && ymd <= b;
   });
 }
 

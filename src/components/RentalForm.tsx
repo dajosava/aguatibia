@@ -404,7 +404,9 @@ export default function RentalForm() {
             <button
               type="button"
               onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-              className="px-3 py-2 sm:px-4 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-xs sm:text-sm font-semibold transition min-h-[40px]"
+              aria-label={lang === 'en' ? t.langSwitchAriaToSpanish : t.langSwitchAriaToEnglish}
+              title={lang === 'en' ? t.langSwitchAriaToSpanish : t.langSwitchAriaToEnglish}
+              className="inline-flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-blue-950 px-2.5 text-xs font-bold tracking-wide text-amber-50 uppercase shadow-md ring-1 ring-blue-900/80 transition hover:bg-[#0c1d3a] hover:ring-cyan-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:h-12 sm:min-w-12 sm:text-sm"
             >
               {lang === 'en' ? t.langSwitchToEs : t.langSwitchToEn}
             </button>

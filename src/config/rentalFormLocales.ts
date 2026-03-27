@@ -28,8 +28,14 @@ export type RentalFormErrorMessages = {
 };
 
 export type RentalFormStrings = {
+  /** Texto visible del botón al pasar a español (p. ej. «ES»). */
   langSwitchToEs: string;
+  /** Texto visible del botón al pasar a inglés (p. ej. «ENG»). */
   langSwitchToEn: string;
+  /** `aria-label` cuando el botón cambia a español. */
+  langSwitchAriaToSpanish: string;
+  /** `aria-label` cuando el botón cambia a inglés. */
+  langSwitchAriaToEnglish: string;
   successTitle: string;
   successBody: string;
   successAnother: string;
@@ -125,8 +131,10 @@ const rentalOptionLabelsEs: Record<string, string> = {
 
 export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
   en: {
-    langSwitchToEs: 'Español',
-    langSwitchToEn: 'English',
+    langSwitchToEs: 'ES',
+    langSwitchToEn: 'EN',
+    langSwitchAriaToSpanish: 'Switch to Spanish',
+    langSwitchAriaToEnglish: 'Switch to English',
     successTitle: 'Successfully added',
     successBody: 'Your form was submitted correctly. Thank you.',
     successAnother: 'Submit another',
@@ -231,8 +239,10 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     },
   },
   es: {
-    langSwitchToEs: 'Español',
-    langSwitchToEn: 'English',
+    langSwitchToEs: 'ES',
+    langSwitchToEn: 'EN',
+    langSwitchAriaToSpanish: 'Cambiar a español',
+    langSwitchAriaToEnglish: 'Cambiar a inglés',
     successTitle: '¡Agregado correctamente!',
     successBody: 'El formulario se envió bien. Gracias.',
     successAnother: 'Enviar otro formulario',

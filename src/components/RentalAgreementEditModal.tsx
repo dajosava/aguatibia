@@ -17,6 +17,7 @@ import type { StoreProductRow } from '../types/storeProduct';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import RentalBoardChangeHistoryList from './RentalBoardChangeHistoryList';
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
+import { surfboardMatchesRentalTier } from '../utils/surfboardRentalTier';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 import { parseStoreLineQuantity } from '../utils/storeLineQuantity';
 import { clampEditStoreQuantities, maxQuantityForEditStoreRow } from '../utils/storeRowMaxQuantity';
@@ -245,8 +246,13 @@ export default function RentalAgreementEditModal({
   }, [agreement.contract_paid]);
 
   const boardsDisponibles = useMemo(
-    () => boards.filter((b) => (b.status ?? 'Disponible') === 'Disponible'),
-    [boards]
+    () =>
+      boards.filter(
+        (b) =>
+          (b.status ?? 'Disponible') === 'Disponible' &&
+          surfboardMatchesRentalTier(b, agreement.rental_type)
+      ),
+    [boards, agreement.rental_type]
   );
 
   const agreementBoards = useMemo(() => getAgreementBoardNumbers(agreement), [agreement]);
@@ -266,7 +272,9 @@ export default function RentalAgreementEditModal({
       if (num === rowBoard) return true;
       if (selectedElsewhere.has(num)) return false;
       const disp = (b.status ?? 'Disponible') === 'Disponible';
-      return disp || assignedLower.has(num.toLowerCase());
+      const tierOk = surfboardMatchesRentalTier(b, agreement.rental_type);
+      const selectedInForm = assignedLower.has(num.toLowerCase());
+      return (disp && tierOk) || selectedInForm;
     });
   };
 
@@ -404,8 +412,13 @@ export default function RentalAgreementEditModal({
       return;
     }
     for (const n of nums) {
-      if (!boards.some((b) => b.board_number === n)) {
+      const row = boards.find((b) => b.board_number === n);
+      if (!row) {
         setError('Una de las tablas no existe en el inventario.');
+        return;
+      }
+      if (!surfboardMatchesRentalTier(row, agreement.rental_type)) {
+        setError('Alguna tabla no coincide con el tipo de renta (regular / premium) del contrato.');
         return;
       }
     }

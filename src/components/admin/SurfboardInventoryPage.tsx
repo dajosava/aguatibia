@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import type { SurfboardInventoryRow, SurfboardStatus } from '../../types/surfboardInventory';
-import { SURFBOARD_STATUS_VALUES } from '../../types/surfboardInventory';
+import type {
+  EquipmentKind,
+  SurfboardInventoryRow,
+  SurfboardStatus,
+  SurfboardTier,
+} from '../../types/surfboardInventory';
+import {
+  SURFBOARD_EQUIPMENT_KIND_VALUES,
+  SURFBOARD_STATUS_VALUES,
+  SURFBOARD_TIER_VALUES,
+} from '../../types/surfboardInventory';
 import {
   deleteSurfboard,
   fetchSurfboardInventory,
@@ -18,6 +27,10 @@ function rowMatchesInventoryFilter(row: SurfboardInventoryRow, filter: Inventory
   const s = row.status ?? 'Disponible';
   if (filter === 'otras') return s !== 'Disponible' && s !== 'Rentada' && s !== 'En mantenimiento';
   return s === filter;
+}
+
+function rowIsBoogie(row: SurfboardInventoryRow): boolean {
+  return (row.equipment_kind ?? 'surfboard') === 'boogie';
 }
 
 function statusBadgeClass(status: string): string {
@@ -43,13 +56,19 @@ export default function SurfboardInventoryPage() {
   const [newNumber, setNewNumber] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newStatus, setNewStatus] = useState<SurfboardStatus>('Disponible');
+  const [newEquipmentKind, setNewEquipmentKind] = useState<EquipmentKind>('surfboard');
+  const [newTier, setNewTier] = useState<SurfboardTier>('regular');
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<SurfboardInventoryRow | null>(null);
   const [editBrand, setEditBrand] = useState('');
   const [editNumber, setEditNumber] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editStatus, setEditStatus] = useState<SurfboardStatus>('Disponible');
+  const [editEquipmentKind, setEditEquipmentKind] = useState<EquipmentKind>('surfboard');
+  const [editTier, setEditTier] = useState<SurfboardTier>('regular');
   const [statusFilter, setStatusFilter] = useState<InventoryStatusFilter>('all');
+  /** Si es true, la tabla solo muestra filas catalogadas como boogie (combinable con filtro por estado). */
+  const [boogieOnlyFilter, setBoogieOnlyFilter] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const load = useCallback(async () => {
@@ -86,12 +105,18 @@ export default function SurfboardInventoryPage() {
       else if (s === 'En mantenimiento') mantenimiento++;
       else otras++;
     }
-    return { disponible, rentada, mantenimiento, otras, total: rows.length };
+    const boogies = rows.filter(rowIsBoogie).length;
+    return { disponible, rentada, mantenimiento, otras, total: rows.length, boogies };
   }, [rows]);
 
-  const filteredRows = useMemo(
+  const rowsMatchingStatusOnly = useMemo(
     () => rows.filter((r) => rowMatchesInventoryFilter(r, statusFilter)),
     [rows, statusFilter]
+  );
+
+  const filteredRows = useMemo(
+    () => rowsMatchingStatusOnly.filter((r) => !boogieOnlyFilter || rowIsBoogie(r)),
+    [rowsMatchingStatusOnly, boogieOnlyFilter]
   );
 
   useEffect(() => {
@@ -100,8 +125,24 @@ export default function SurfboardInventoryPage() {
     }
   }, [statusFilter, statusCounts.otras]);
 
+  useEffect(() => {
+    if (boogieOnlyFilter && statusCounts.boogies === 0) {
+      setBoogieOnlyFilter(false);
+    }
+  }, [boogieOnlyFilter, statusCounts.boogies]);
+
   const pickFilter = (f: InventoryStatusFilter) => {
+    setBoogieOnlyFilter(false);
     setStatusFilter((prev) => (prev === f ? 'all' : f));
+  };
+
+  const clearStatusToAll = () => {
+    setBoogieOnlyFilter(false);
+    setStatusFilter('all');
+  };
+
+  const toggleBoogieOnlyFilter = () => {
+    setBoogieOnlyFilter((prev) => !prev);
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -124,11 +165,15 @@ export default function SurfboardInventoryPage() {
         board_number: num,
         description: newDesc.trim() || null,
         status: newStatus,
+        equipment_kind: newEquipmentKind,
+        board_tier: newEquipmentKind === 'boogie' ? 'regular' : newTier,
       });
       setNewBrand('');
       setNewNumber('');
       setNewDesc('');
       setNewStatus('Disponible');
+      setNewEquipmentKind('surfboard');
+      setNewTier('regular');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar');
@@ -143,6 +188,8 @@ export default function SurfboardInventoryPage() {
     setEditNumber(row.board_number);
     setEditDesc(row.description ?? '');
     setEditStatus((row.status ?? 'Disponible') as SurfboardStatus);
+    setEditEquipmentKind((row.equipment_kind ?? 'surfboard') as EquipmentKind);
+    setEditTier((row.board_tier ?? 'regular') as SurfboardTier);
   };
 
   const closeEdit = () => {
@@ -170,6 +217,8 @@ export default function SurfboardInventoryPage() {
         board_number: num,
         description: editDesc.trim() || null,
         status: editStatus,
+        equipment_kind: editEquipmentKind,
+        board_tier: editEquipmentKind === 'boogie' ? 'regular' : editTier,
       });
       closeEdit();
       await load();
@@ -208,21 +257,45 @@ export default function SurfboardInventoryPage() {
     <div className="px-2 py-1 md:px-3 md:py-2">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100 mb-0.5">
-          Inventario de tablas
+          Inventario de tablas y boogies
         </h1>
         <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 leading-snug mt-0.5 mb-6 md:mb-7">
-          Marca y número son los que verá el cliente al elegir tabla en el formulario de renta (solo tablas{' '}
-          <strong className="text-gray-800 dark:text-slate-200">Disponible</strong>). Al enviarse un contrato con esa
-          tabla, el inventario la pasa automáticamente a <strong className="text-gray-800 dark:text-slate-200">Rentada</strong>.
-          La descripción es solo para uso interno del equipo.
+          Primero elige <strong className="text-gray-800 dark:text-slate-200">tabla de surf o boogie</strong>. Marca y
+          número los verá el cliente (solo ítems{' '}
+          <strong className="text-gray-800 dark:text-slate-200">Disponible</strong>). En tablas de surf, Regular/Premium
+          filtra el formulario público; «Boogie Session» solo lista boogies. La descripción es solo interna.
         </p>
 
         <form
           onSubmit={handleAdd}
           className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8"
         >
-          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nueva tabla</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nuevo equipo</h2>
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            <div className="sm:col-span-2">
+              <label className="form-label" htmlFor="inv-equipment-kind">
+                Tipo de equipo *
+              </label>
+              <select
+                id="inv-equipment-kind"
+                value={newEquipmentKind}
+                onChange={(e) => {
+                  const k = e.target.value as EquipmentKind;
+                  setNewEquipmentKind(k);
+                  if (k === 'boogie') setNewTier('regular');
+                }}
+                className="form-input max-w-md"
+              >
+                {SURFBOARD_EQUIPMENT_KIND_VALUES.map((k) => (
+                  <option key={k} value={k}>
+                    {k === 'boogie' ? 'Boogie' : 'Tabla de surf'}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1.5">
+                Obligatorio: distingue inventario de surf del de boogie en el formulario de renta.
+              </p>
+            </div>
             <div>
               <label className="form-label" htmlFor="inv-brand">
                 Marca *
@@ -266,6 +339,33 @@ export default function SurfboardInventoryPage() {
                 ))}
               </select>
             </div>
+            {newEquipmentKind === 'surfboard' ? (
+              <div>
+                <label className="form-label" htmlFor="inv-tier">
+                  Renta (tabla) *
+                </label>
+                <select
+                  id="inv-tier"
+                  value={newTier}
+                  onChange={(e) => setNewTier(e.target.value as SurfboardTier)}
+                  className="form-input"
+                  aria-describedby="inv-tier-hint"
+                >
+                  {SURFBOARD_TIER_VALUES.map((tier) => (
+                    <option key={tier} value={tier}>
+                      {tier === 'premium' ? 'Premium' : 'Regular'}
+                    </option>
+                  ))}
+                </select>
+                <p id="inv-tier-hint" className="text-xs text-gray-500 dark:text-slate-500 mt-1.5 leading-snug">
+                  Premium: solo contratos con opción premium. Regular: resto de rentas de tabla.
+                </p>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500 dark:text-slate-500 leading-snug sm:col-span-2">
+                Boogie: no aplica Regular/Premium; se usará en «Boogie Session» del formulario público.
+              </div>
+            )}
             <div className="sm:col-span-2">
               <label className="form-label" htmlFor="inv-desc">
                 Descripción (solo interno)
@@ -286,7 +386,7 @@ export default function SurfboardInventoryPage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 dark:bg-cyan-700 dark:hover:bg-cyan-600 disabled:opacity-50"
           >
             <Plus className="w-5 h-5" />
-            Añadir tabla
+            Añadir equipo
           </button>
         </form>
 
@@ -302,12 +402,27 @@ export default function SurfboardInventoryPage() {
               Resumen por estado · pulsa para filtrar la tabla
             </p>
             <p className="text-xs text-gray-500 dark:text-slate-500 mb-3">
-              Pulsa de nuevo el mismo filtro para ver todas las tablas.
+              Pulsa de nuevo el mismo filtro de estado para ver todos los estados. El botón Boogies se quita pulsándolo
+              otra vez.
             </p>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => setStatusFilter('all')}
+                onClick={toggleBoogieOnlyFilter}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
+                  boogieOnlyFilter
+                    ? 'border-fuchsia-500 bg-fuchsia-50 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-fuchsia-400 dark:bg-fuchsia-950/45 dark:ring-cyan-400 dark:ring-offset-slate-800'
+                    : 'border-fuchsia-200 bg-fuchsia-50/80 hover:brightness-95 dark:border-fuchsia-900/40 dark:bg-fuchsia-950/30 dark:hover:bg-fuchsia-950/45'
+                }`}
+              >
+                <span className="text-sm font-medium text-fuchsia-900 dark:text-fuchsia-200">Boogies</span>
+                <span className="text-xl font-bold tabular-nums text-fuchsia-800 dark:text-fuchsia-100">
+                  {statusCounts.boogies}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={clearStatusToAll}
                 className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-left transition shadow-sm ${
                   statusFilter === 'all'
                     ? 'border-gray-500 bg-gray-200 ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50 dark:border-slate-400 dark:bg-slate-700 dark:ring-cyan-400 dark:ring-offset-slate-800'
@@ -379,15 +494,29 @@ export default function SurfboardInventoryPage() {
               ) : null}
             </div>
             <p className="text-xs text-gray-500 dark:text-slate-500 mt-3">
-              {statusFilter === 'all' ? (
+              {statusFilter === 'all' && !boogieOnlyFilter ? (
                 <>
-                  Total de tablas en inventario:{' '}
+                  Total en inventario:{' '}
                   <strong className="text-gray-800 dark:text-slate-200">{statusCounts.total}</strong>
+                  {statusCounts.boogies > 0 ? (
+                    <>
+                      {' '}
+                      (<strong className="text-gray-800 dark:text-slate-200">{statusCounts.boogies}</strong> boogies)
+                    </>
+                  ) : null}
+                </>
+              ) : boogieOnlyFilter ? (
+                <>
+                  Solo boogies:{' '}
+                  <strong className="text-gray-800 dark:text-slate-200">{filteredRows.length}</strong> de{' '}
+                  <strong className="text-gray-800 dark:text-slate-200">{rowsMatchingStatusOnly.length}</strong>
+                  {statusFilter === 'all' ? ' equipos en inventario' : ' con este estado'}
                 </>
               ) : (
                 <>
                   Mostrando <strong className="text-gray-800 dark:text-slate-200">{filteredRows.length}</strong> de{' '}
-                  <strong className="text-gray-800 dark:text-slate-200">{statusCounts.total}</strong> tablas
+                  <strong className="text-gray-800 dark:text-slate-200">{rowsMatchingStatusOnly.length}</strong> equipos
+                  {statusFilter !== 'all' ? ' con este estado' : ''}
                 </>
               )}
             </p>
@@ -397,7 +526,9 @@ export default function SurfboardInventoryPage() {
               <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Marca</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nº tabla</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nº</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Equipo</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Renta</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Estado</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">
                     Descripción (interno)
@@ -410,14 +541,14 @@ export default function SurfboardInventoryPage() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
-                      No hay tablas registradas. Añade la primera arriba.
+                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                      No hay equipos registrados. Añade el primero arriba.
                     </td>
                   </tr>
                 ) : filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
-                      Ninguna tabla coincide con este filtro. Pulsa «Todas» o el mismo contador otra vez para ver
+                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
+                      Ningún equipo coincide con este filtro. Pulsa «Todas» o el mismo contador otra vez para ver
                       todo el inventario.
                     </td>
                   </tr>
@@ -428,6 +559,16 @@ export default function SurfboardInventoryPage() {
                         {(row.brand ?? '').trim() || '—'}
                       </td>
                       <td className="px-4 py-3 font-bold text-blue-600 dark:text-cyan-400">{row.board_number}</td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-slate-200">
+                        {(row.equipment_kind ?? 'surfboard') === 'boogie' ? 'Boogie' : 'Tabla de surf'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-slate-200">
+                        {(row.equipment_kind ?? 'surfboard') === 'boogie'
+                          ? '—'
+                          : (row.board_tier ?? 'regular') === 'premium'
+                            ? 'Premium'
+                            : 'Regular'}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadgeClass(row.status ?? 'Disponible')}`}
@@ -474,7 +615,7 @@ export default function SurfboardInventoryPage() {
         >
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-lg w-full border border-gray-200 dark:border-slate-600 p-6 max-h-[90vh] overflow-y-auto">
             <h2 id="edit-inv-title" className="text-lg font-semibold tracking-tight text-gray-900 dark:text-slate-100 mb-4">
-              Editar tabla
+              Editar equipo
             </h2>
             <form onSubmit={handleSaveEdit}>
               <div className="mb-4">
@@ -502,6 +643,27 @@ export default function SurfboardInventoryPage() {
                 />
               </div>
               <div className="mb-4">
+                <label className="form-label" htmlFor="edit-equipment-kind">
+                  Tipo de equipo
+                </label>
+                <select
+                  id="edit-equipment-kind"
+                  value={editEquipmentKind}
+                  onChange={(e) => {
+                    const k = e.target.value as EquipmentKind;
+                    setEditEquipmentKind(k);
+                    if (k === 'boogie') setEditTier('regular');
+                  }}
+                  className="form-input"
+                >
+                  {SURFBOARD_EQUIPMENT_KIND_VALUES.map((k) => (
+                    <option key={k} value={k}>
+                      {k === 'boogie' ? 'Boogie' : 'Tabla de surf'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
                 <label className="form-label" htmlFor="edit-status">
                   Estado
                 </label>
@@ -518,6 +680,25 @@ export default function SurfboardInventoryPage() {
                   ))}
                 </select>
               </div>
+              {editEquipmentKind === 'surfboard' ? (
+                <div className="mb-4">
+                  <label className="form-label" htmlFor="edit-tier">
+                    Renta (tabla)
+                  </label>
+                  <select
+                    id="edit-tier"
+                    value={editTier}
+                    onChange={(e) => setEditTier(e.target.value as SurfboardTier)}
+                    className="form-input"
+                  >
+                    {SURFBOARD_TIER_VALUES.map((tier) => (
+                      <option key={tier} value={tier}>
+                        {tier === 'premium' ? 'Premium' : 'Regular'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
               <div className="mb-6">
                 <label className="form-label" htmlFor="edit-desc">
                   Descripción (solo interno)

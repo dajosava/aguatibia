@@ -18,6 +18,12 @@ import { parseStoreLineQuantity } from '../utils/storeLineQuantity';
 import { clampPublicStoreQuantities, maxQuantityForPublicStoreRow } from '../utils/storeRowMaxQuantity';
 import type { SurfboardInventoryRow } from '../types/surfboardInventory';
 import { findSurfboardByInput, formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
+import {
+  inventoryRowIsDisponible,
+  rentalTypeRequiresPremiumBoards,
+  surfboardEligibleForPublicRental,
+  surfboardMatchesRentalTier,
+} from '../utils/surfboardRentalTier';
 
 function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null, quantity: 1 };
@@ -175,6 +181,28 @@ export default function RentalForm() {
     return () => window.clearTimeout(timer);
   }, [isSuccess]);
 
+  const surfboardsEligible = useMemo(() => {
+    if (!formData.rental_type) {
+      return surfboards.filter((b) => inventoryRowIsDisponible(b));
+    }
+    return surfboards.filter((b) => surfboardEligibleForPublicRental(b, formData.rental_type));
+  }, [surfboards, formData.rental_type]);
+
+  useEffect(() => {
+    if (!formData.rental_type) return;
+    setBoardLines((prev) =>
+      prev.map((line) => {
+        const n = line.boardNumber.trim();
+        if (!n) return line;
+        const row = findSurfboardByInput(surfboards, n);
+        if (!row || !surfboardEligibleForPublicRental(row, formData.rental_type)) {
+          return { ...line, boardNumber: '' };
+        }
+        return line;
+      })
+    );
+  }, [formData.rental_type, surfboards]);
+
   const selectedRentalOptionLabel = useMemo(() => {
     const opt = RENTAL_OPTIONS.find(
       (o) => o.type === formData.rental_type && o.duration === formData.rental_duration
@@ -213,7 +241,7 @@ export default function RentalForm() {
         .map((l) => l.boardNumber.trim())
         .filter((n) => n.length > 0)
     );
-    return surfboards.filter(
+    return surfboardsEligible.filter(
       (b) => !selectedElsewhere.has(b.board_number) || b.board_number === rowBoard
     );
   };
@@ -303,9 +331,30 @@ export default function RentalForm() {
       setIsSubmitting(false);
       return;
     }
+    let freshInventory: SurfboardInventoryRow[] | null = null;
+    try {
+      freshInventory = await fetchSurfboardInventoryForRental();
+    } catch {
+      setError(err.submitFailed);
+      setIsSubmitting(false);
+      return;
+    }
+    setSurfboards(freshInventory);
+
     for (const n of nums) {
-      if (!surfboards.some((b) => b.board_number === n)) {
+      const row = findSurfboardByInput(freshInventory, n);
+      if (!row) {
         setError(err.invalidBoard);
+        setIsSubmitting(false);
+        return;
+      }
+      if (!inventoryRowIsDisponible(row)) {
+        setError(err.boardNotAvailable);
+        setIsSubmitting(false);
+        return;
+      }
+      if (!surfboardMatchesRentalTier(row, formData.rental_type)) {
+        setError(err.invalidBoardTier);
         setIsSubmitting(false);
         return;
       }
@@ -544,7 +593,11 @@ export default function RentalForm() {
                 <button
                   type="button"
                   onClick={() => setBoardLines((prev) => [...prev, newBoardLine()])}
-                  disabled={surfboardsLoading || surfboards.length === 0}
+                  disabled={
+                    surfboardsLoading ||
+                    surfboards.length === 0 ||
+                    (!!formData.rental_type && surfboardsEligible.length === 0)
+                  }
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-cyan-500 text-sm font-medium disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
@@ -556,6 +609,12 @@ export default function RentalForm() {
               ) : surfboards.length === 0 ? (
                 <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
                   {t.noBoardsWarning}
+                </p>
+              ) : formData.rental_type && surfboardsEligible.length === 0 ? (
+                <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                  {rentalTypeRequiresPremiumBoards(formData.rental_type)
+                    ? t.errors.noBoardsPremiumRental
+                    : t.errors.noBoardsRegularRental}
                 </p>
               ) : (
                 <>
@@ -596,6 +655,13 @@ export default function RentalForm() {
                     ))}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-slate-500 mt-2">{t.boardsHelp}</p>
+                  {formData.rental_type ? (
+                    <p className="text-xs text-blue-800/90 dark:text-cyan-200/90 mt-2">
+                      {rentalTypeRequiresPremiumBoards(formData.rental_type)
+                        ? t.boardsTierNoticePremium
+                        : t.boardsTierNoticeRegular}
+                    </p>
+                  ) : null}
                 </>
               )}
             </div>
@@ -941,7 +1007,10 @@ export default function RentalForm() {
           <button
             type="submit"
             disabled={
-              isSubmitting || surfboardsLoading || surfboards.length === 0
+              isSubmitting ||
+              surfboardsLoading ||
+              surfboards.length === 0 ||
+              (!!formData.rental_type && surfboardsEligible.length === 0)
             }
             className="w-full min-h-[52px] bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-950 dark:to-cyan-800 text-white py-3.5 sm:py-4 rounded-lg font-bold text-base sm:text-lg hover:from-blue-700 hover:to-cyan-700 dark:hover:from-blue-900 dark:hover:to-cyan-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-manipulation"
           >

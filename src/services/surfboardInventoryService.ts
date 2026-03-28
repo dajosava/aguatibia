@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { SurfboardInventoryInsert, SurfboardInventoryRow, SurfboardInventoryUpdate } from '../types/surfboardInventory';
 
 const SELECT =
-  'id, brand, board_number, description, status, created_at, updated_at';
+  'id, brand, board_number, equipment_kind, board_tier, description, status, created_at, updated_at';
 
 /** Listado completo para panel admin (authenticated). */
 export async function fetchSurfboardInventory(): Promise<SurfboardInventoryRow[]> {
@@ -26,7 +26,9 @@ export async function fetchSurfboardInventoryForRental(): Promise<SurfboardInven
     .order('board_number', { ascending: true });
 
   if (error) throw error;
-  return (data ?? []) as SurfboardInventoryRow[];
+  const rows = (data ?? []) as SurfboardInventoryRow[];
+  // Defensa en profundidad (RLS + .eq): nunca ofrecer en el formulario público algo que no esté Disponible.
+  return rows.filter((r) => (r.status ?? 'Disponible') === 'Disponible');
 }
 
 export async function insertSurfboard(row: SurfboardInventoryInsert): Promise<SurfboardInventoryRow> {
@@ -35,6 +37,8 @@ export async function insertSurfboard(row: SurfboardInventoryInsert): Promise<Su
     .insert({
       brand: row.brand.trim(),
       board_number: row.board_number.trim(),
+      equipment_kind: row.equipment_kind ?? 'surfboard',
+      board_tier: row.board_tier ?? 'regular',
       description: row.description?.trim() || null,
       status: row.status ?? 'Disponible',
     })
@@ -51,6 +55,8 @@ export async function updateSurfboard(id: string, patch: SurfboardInventoryUpdat
   if (patch.board_number !== undefined) payload.board_number = patch.board_number.trim();
   if (patch.description !== undefined) payload.description = patch.description?.trim() || null;
   if (patch.status !== undefined) payload.status = patch.status;
+  if (patch.board_tier !== undefined) payload.board_tier = patch.board_tier;
+  if (patch.equipment_kind !== undefined) payload.equipment_kind = patch.equipment_kind;
 
   const { error } = await supabase.from('surfboard_inventory').update(payload).eq('id', id);
 

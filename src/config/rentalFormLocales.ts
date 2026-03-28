@@ -24,6 +24,11 @@ export type RentalFormErrorMessages = {
   completeOrRemoveBoardRows: string;
   duplicateBoard: string;
   invalidBoard: string;
+  /** Equipo en inventario pero ya no Disponible (p. ej. rentado o en mantenimiento). */
+  boardNotAvailable: string;
+  invalidBoardTier: string;
+  noBoardsRegularRental: string;
+  noBoardsPremiumRental: string;
   submitFailed: string;
 };
 
@@ -55,6 +60,8 @@ export type RentalFormStrings = {
   noBoardsWarning: string;
   boardRowLabel: (n: number) => string;
   boardsHelp: string;
+  boardsTierNoticePremium: string;
+  boardsTierNoticeRegular: string;
   removeBoardAria: string;
   surfboardCombobox: {
     placeholder: string;
@@ -156,6 +163,10 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     boardRowLabel: (n) => `Board ${n}`,
     boardsHelp:
       'One contract can include several boards (e.g. family or group). Each row must be a different board in Available status. Search by brand or number.',
+    boardsTierNoticePremium:
+      'With your rental type, only premium-class boards from inventory are shown (staff assigns premium vs regular in admin).',
+    boardsTierNoticeRegular:
+      'With your rental type, only regular boards from inventory are shown. To rent a premium board, choose a premium rental option above.',
     removeBoardAria: 'Remove board',
     surfboardCombobox: {
       placeholder: 'Search by brand or number…',
@@ -235,6 +246,14 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
       completeOrRemoveBoardRows: 'Complete all board rows or remove empty rows.',
       duplicateBoard: 'You cannot assign the same board twice in one contract.',
       invalidBoard: 'One of the selected boards is not valid in inventory.',
+      boardNotAvailable:
+        'One of the selected boards is no longer available (it may already be rented). Refresh the page or pick another board.',
+      invalidBoardTier:
+        'One of the boards does not match your rental type (regular vs premium). Choose again or change the rental option.',
+      noBoardsRegularRental:
+        'There are no regular boards available for this rental type. Please contact the school.',
+      noBoardsPremiumRental:
+        'There are no premium boards available for this rental type. Please contact the school.',
       submitFailed: 'Failed to submit the form',
     },
   },
@@ -264,6 +283,10 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     boardRowLabel: (n) => `Tabla ${n}`,
     boardsHelp:
       'Un mismo contrato puede incluir varias tablas (por ejemplo familia o grupo). Cada fila debe ser una tabla distinta en estado Disponible. Busca por marca o número.',
+    boardsTierNoticePremium:
+      'Con el tipo de renta elegido solo aparecen tablas marcadas como premium en inventario (el equipo las clasifica en administración).',
+    boardsTierNoticeRegular:
+      'Con el tipo de renta elegido solo aparecen tablas regulares. Para una tabla premium, elige arriba una opción de renta premium.',
     removeBoardAria: 'Quitar tabla',
     surfboardCombobox: {
       placeholder: 'Busca por marca o número…',
@@ -343,6 +366,14 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
       completeOrRemoveBoardRows: 'Completa todas las tablas o elimina las filas vacías.',
       duplicateBoard: 'No puedes asignar la misma tabla dos veces en un mismo contrato.',
       invalidBoard: 'Una de las tablas seleccionadas no es válida en el inventario.',
+      boardNotAvailable:
+        'Uno de los equipos elegidos ya no está disponible (puede estar rentado u ocupado). Recarga la página o elige otro.',
+      invalidBoardTier:
+        'Alguna tabla no coincide con el tipo de renta (regular / premium). Elige de nuevo o cambia la opción de renta.',
+      noBoardsRegularRental:
+        'No hay tablas regulares disponibles para este tipo de renta. Contacta a la escuela.',
+      noBoardsPremiumRental:
+        'No hay tablas premium disponibles para este tipo de renta. Contacta a la escuela.',
       submitFailed: 'Error al enviar el formulario',
     },
   },

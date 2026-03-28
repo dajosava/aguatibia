@@ -19,6 +19,7 @@ import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 import { printRentalAgreement } from '../utils/rentalAgreementPrint';
 import { useAdminAutoRefresh } from '../hooks/useAdminAutoRefresh';
+import { adminDataTableWrapperClass } from '../utils/adminDataTableScroll';
 
 /** Filtro del listado al pulsar las tarjetas de resumen */
 type AgreementsStatsFilter = 'all' | 'ongoing' | 'overdue' | 'closed';
@@ -238,10 +239,7 @@ export default function AdminDashboard() {
 
   const selectedDetailBoards = selectedAgreement ? getAgreementBoardNumbers(selectedAgreement) : [];
 
-  const agreementsTableScrollClass =
-    displayAgreements.length > 10
-      ? 'max-h-[min(70vh,40rem)] overflow-x-auto overflow-y-auto overscroll-y-contain'
-      : 'overflow-x-auto';
+  const agreementsTableScrollClass = adminDataTableWrapperClass(displayAgreements.length);
 
   return (
     <div className="text-gray-900 dark:text-slate-100 px-2 py-1 md:px-3 md:py-2">

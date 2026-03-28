@@ -8,6 +8,7 @@ import {
   insertStoreProduct,
   updateStoreProduct,
 } from '../../services/storeCatalogService';
+import { ADMIN_TABLE_THEAD_STICKY, adminDataTableWrapperClass } from '../../utils/adminDataTableScroll';
 
 function parseUnitPrice(raw: string): number | null {
   const t = raw.replace(',', '.').trim();
@@ -161,6 +162,8 @@ export default function StoreArticlesCatalogPage() {
     );
   }
 
+  const storeCatalogTableWrapperClass = adminDataTableWrapperClass(rows.length);
+
   return (
     <div className="px-2 py-1 md:px-3 md:py-2">
       <div className="max-w-5xl mx-auto">
@@ -247,9 +250,9 @@ export default function StoreArticlesCatalogPage() {
         )}
 
         <div className="bg-white dark:bg-slate-900/90 dark:border dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className={storeCatalogTableWrapperClass}>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
+              <thead className={ADMIN_TABLE_THEAD_STICKY}>
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Artículo</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-700 dark:text-slate-300 w-24">Precio</th>

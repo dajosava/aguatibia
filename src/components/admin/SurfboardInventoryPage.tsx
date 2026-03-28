@@ -19,6 +19,7 @@ import {
 } from '../../services/surfboardInventoryService';
 import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import { formatSurfboardPublicLabel } from '../../utils/surfboardDisplay';
+import { ADMIN_TABLE_THEAD_STICKY, adminDataTableWrapperClass } from '../../utils/adminDataTableScroll';
 
 type InventoryStatusFilter = 'all' | 'Disponible' | 'Rentada' | 'En mantenimiento' | 'otras';
 
@@ -252,6 +253,9 @@ export default function SurfboardInventoryPage() {
       </div>
     );
   }
+
+  const inventoryDataRowCount = rows.length === 0 || filteredRows.length === 0 ? 0 : filteredRows.length;
+  const inventoryTableWrapperClass = adminDataTableWrapperClass(inventoryDataRowCount);
 
   return (
     <div className="px-2 py-1 md:px-3 md:py-2">
@@ -521,9 +525,9 @@ export default function SurfboardInventoryPage() {
               )}
             </p>
           </div>
-          <div className="overflow-x-auto">
+          <div className={inventoryTableWrapperClass}>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
+              <thead className={ADMIN_TABLE_THEAD_STICKY}>
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Marca</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nº</th>

@@ -8,6 +8,7 @@ import {
   insertRentalArticle,
   updateRentalArticle,
 } from '../../services/rentalArticleInventoryService';
+import { ADMIN_TABLE_THEAD_STICKY, adminDataTableWrapperClass } from '../../utils/adminDataTableScroll';
 
 const CATEGORY_PLACEHOLDER = 'Ej. Sombrilla, Silla, Toldo…';
 
@@ -174,6 +175,8 @@ export default function RentalArticlesInventoryPage() {
     );
   }
 
+  const articlesTableWrapperClass = adminDataTableWrapperClass(rows.length);
+
   return (
     <div className="px-2 py-1 md:px-3 md:py-2">
       <div className="max-w-5xl mx-auto">
@@ -284,9 +287,9 @@ export default function RentalArticlesInventoryPage() {
         )}
 
         <div className="bg-white dark:bg-slate-900/90 dark:border dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className={articlesTableWrapperClass}>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-600">
+              <thead className={ADMIN_TABLE_THEAD_STICKY}>
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Nombre</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-slate-300">Categoría</th>

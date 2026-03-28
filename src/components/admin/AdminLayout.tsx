@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Armchair, BarChart3, LayoutDashboard, LogOut, ShoppingBag, User, Waves } from 'lucide-react';
+import {
+  ADMIN_AUTO_REFRESH_EVENT,
+  ADMIN_AUTO_REFRESH_INTERVAL_MS,
+} from '../../config/adminAutoRefresh';
 import { adminPath, type AdminSection } from '../../config/adminPaths';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -24,6 +29,14 @@ const nav: {
 
 export default function AdminLayout({ children }: Props) {
   const { signOut, user } = useAuth();
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      window.dispatchEvent(new CustomEvent(ADMIN_AUTO_REFRESH_EVENT));
+    }, ADMIN_AUTO_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, []);
+
   const email = user?.email ?? '';
   const fullName =
     typeof user?.user_metadata?.full_name === 'string' ? user.user_metadata.full_name.trim() : '';

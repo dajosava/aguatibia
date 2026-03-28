@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import type { StoreProductRow } from '../../types/storeProduct';
+import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import {
   deleteStoreProduct,
   fetchStoreProducts,
@@ -44,6 +45,7 @@ export default function StoreArticlesCatalogPage() {
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editStock, setEditStock] = useState('');
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -55,12 +57,17 @@ export default function StoreArticlesCatalogPage() {
       setError(e instanceof Error ? e.message : 'No se pudo cargar el catálogo');
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useAdminAutoRefresh(() => {
+    void load();
+  });
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,7 +153,7 @@ export default function StoreArticlesCatalogPage() {
     })();
   };
 
-  if (loading) {
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] px-4">
         <p className="text-gray-600 dark:text-slate-400">Cargando artículos de tienda…</p>

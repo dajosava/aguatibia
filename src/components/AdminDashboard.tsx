@@ -18,6 +18,7 @@ import {
 import { formatSurfboardPublicLabel } from '../utils/surfboardDisplay';
 import { getAgreementBoardNumbers } from '../utils/agreementBoards';
 import { printRentalAgreement } from '../utils/rentalAgreementPrint';
+import { useAdminAutoRefresh } from '../hooks/useAdminAutoRefresh';
 
 /** Filtro del listado al pulsar las tarjetas de resumen */
 type AgreementsStatsFilter = 'all' | 'ongoing' | 'overdue' | 'closed';
@@ -105,6 +106,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadAgreements();
   }, [loadAgreements]);
+
+  useAdminAutoRefresh(() => {
+    void refreshAgreementsData().catch((err) => console.error('Auto-refresh acuerdos:', err));
+    fetchStoreProducts()
+      .then(setProductCatalog)
+      .catch(() => {});
+  });
 
   useEffect(() => {
     fetchStoreProducts()

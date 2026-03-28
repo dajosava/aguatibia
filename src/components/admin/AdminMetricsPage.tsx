@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
 import {
   Bar,
@@ -19,6 +19,7 @@ import { fetchRentalAgreements } from '../../services/rentalAgreementService';
 import { fetchSurfboardInventory } from '../../services/surfboardInventoryService';
 import type { RentalAgreementWithStoreItems } from '../../types/rentalAgreement';
 import type { SurfboardInventoryRow } from '../../types/surfboardInventory';
+import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import {
   buildMetricsModel,
   filterAgreementsByDateRange,
@@ -110,6 +111,7 @@ export default function AdminMetricsPage() {
   const [inventory, setInventory] = useState<SurfboardInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -123,12 +125,17 @@ export default function AdminMetricsPage() {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar los datos de analítica y reportes');
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useAdminAutoRefresh(() => {
+    void load();
+  });
 
   const filtered = useMemo(() => {
     if (timeSelection === 'custom') {
@@ -171,7 +178,7 @@ export default function AdminMetricsPage() {
     [model.topStoreProducts]
   );
 
-  if (loading && agreements.length === 0) {
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-8 md:px-6">
         <div className="flex items-center justify-center min-h-[40vh] text-white text-lg md:text-xl font-medium">

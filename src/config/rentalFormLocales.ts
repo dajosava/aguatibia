@@ -149,7 +149,7 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     pickup: 'Pickup',
     returnLabel: 'Return',
     boardsSection: 'Surfboards *',
-    addBoard: 'Add board',
+    addBoard: 'Add extra board',
     loadingBoards: 'Loading board inventory…',
     noBoardsWarning:
       'No boards in inventory. Staff must register boards in the admin panel before contracts can be submitted.',
@@ -257,7 +257,7 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     pickup: 'Retiro',
     returnLabel: 'Devolución',
     boardsSection: 'Tablas de surf *',
-    addBoard: 'Añadir tabla',
+    addBoard: 'Añadir tabla extra',
     loadingBoards: 'Cargando inventario de tablas…',
     noBoardsWarning:
       'No hay tablas en inventario. El personal debe registrar tablas en el panel administrativo antes de poder enviar contratos.',

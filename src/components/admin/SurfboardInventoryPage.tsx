@@ -8,6 +8,7 @@ import {
   insertSurfboard,
   updateSurfboard,
 } from '../../services/surfboardInventoryService';
+import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import { formatSurfboardPublicLabel } from '../../utils/surfboardDisplay';
 
 type InventoryStatusFilter = 'all' | 'Disponible' | 'Rentada' | 'En mantenimiento' | 'otras';
@@ -49,6 +50,7 @@ export default function SurfboardInventoryPage() {
   const [editDesc, setEditDesc] = useState('');
   const [editStatus, setEditStatus] = useState<SurfboardStatus>('Disponible');
   const [statusFilter, setStatusFilter] = useState<InventoryStatusFilter>('all');
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -60,12 +62,17 @@ export default function SurfboardInventoryPage() {
       setError(e instanceof Error ? e.message : 'No se pudo cargar el inventario');
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useAdminAutoRefresh(() => {
+    void load();
+  });
 
   const statusCounts = useMemo(() => {
     let disponible = 0;
@@ -189,7 +196,7 @@ export default function SurfboardInventoryPage() {
     })();
   };
 
-  if (loading) {
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] px-4">
         <p className="text-gray-600 dark:text-slate-400">Cargando inventario…</p>

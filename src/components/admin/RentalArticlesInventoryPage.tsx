@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Pencil, Plus, Trash2, Armchair } from 'lucide-react';
 import type { RentalArticleInventoryRow } from '../../types/rentalArticleInventory';
+import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import {
   deleteRentalArticle,
   fetchRentalArticleInventory,
@@ -26,6 +27,7 @@ export default function RentalArticlesInventoryPage() {
   const [editDesc, setEditDesc] = useState('');
   const [editUnitPrice, setEditUnitPrice] = useState('0');
   const [editStock, setEditStock] = useState('1');
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -37,12 +39,17 @@ export default function RentalArticlesInventoryPage() {
       setError(e instanceof Error ? e.message : 'No se pudo cargar el inventario');
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useAdminAutoRefresh(() => {
+    void load();
+  });
 
   const parseStock = (raw: string): number | null => {
     const n = Number.parseInt(raw, 10);
@@ -159,7 +166,7 @@ export default function RentalArticlesInventoryPage() {
     })();
   };
 
-  if (loading) {
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] px-4">
         <p className="text-gray-600 dark:text-slate-400">Cargando artículos…</p>

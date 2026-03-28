@@ -24,3 +24,24 @@ export function getRentalPriceForSelection(rentalType: string, rentalDuration: s
   );
   return selected?.price ?? 0;
 }
+
+const MS_HOUR = 60 * 60 * 1000;
+const MS_DAY = 24 * MS_HOUR;
+
+/**
+ * Duración del periodo de renta en ms (sesión 3 h, día 24 h, semana 7×24 h).
+ * Valores alineados con las etiquetas del catálogo (p. ej. «3hrs», full day, week).
+ */
+export function getRentalDurationMs(duration: string): number {
+  switch (duration) {
+    case 'sesh':
+      return 3 * MS_HOUR;
+    case 'full_day':
+    case 'extra_day':
+      return MS_DAY;
+    case 'week':
+      return 7 * MS_DAY;
+    default:
+      return 0;
+  }
+}

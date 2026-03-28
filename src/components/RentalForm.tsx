@@ -6,7 +6,7 @@ import SignatureCanvas from './SignatureCanvas';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import StoreLineQuantityStepper from './StoreLineQuantityStepper';
-import { RENTAL_OPTIONS, getRentalPriceForSelection } from '../config/rentalOptions';
+import { RENTAL_OPTIONS, getRentalDurationMs, getRentalPriceForSelection } from '../config/rentalOptions';
 import type { RentalFormValidationMessages } from '../config/rentalFormLocales';
 import { RENTAL_FORM_STRINGS } from '../config/rentalFormLocales';
 import { usePublicFormLang } from '../contexts/PublicFormLangContext';
@@ -24,6 +24,7 @@ import {
   surfboardEligibleForPublicRental,
   surfboardMatchesRentalTier,
 } from '../utils/surfboardRentalTier';
+import { formatDatetimeLocalCostaRica, parseDatetimeLocalAsCostaRicaMs } from '../utils/costaRicaDatetimeLocal';
 
 function newStoreLine(): StoreItemLine {
   return { id: crypto.randomUUID(), productName: '', price: '', catalogProductId: null, quantity: 1 };
@@ -157,6 +158,20 @@ export default function RentalForm() {
       });
   }, []);
 
+  /** Devolución = retiro + duración de la opción (3 h / 24 h / 1 semana), hora Costa Rica. */
+  useEffect(() => {
+    const dur = formData.rental_duration;
+    const p = formData.pickup.trim();
+    if (!dur || !p) return;
+    const ms = parseDatetimeLocalAsCostaRicaMs(p);
+    if (ms === null) return;
+    const delta = getRentalDurationMs(dur);
+    if (delta <= 0) return;
+    const nextReturn = formatDatetimeLocalCostaRica(new Date(ms + delta));
+    if (!nextReturn) return;
+    setFormData((prev) => (prev.return_time === nextReturn ? prev : { ...prev, return_time: nextReturn }));
+  }, [formData.pickup, formData.rental_duration]);
+
   useEffect(() => {
     let cancelled = false;
     setSurfboardsLoading(true);
@@ -266,11 +281,16 @@ export default function RentalForm() {
   };
 
   const handleRentalSelect = (option: (typeof RENTAL_OPTIONS)[0]) => {
-    setFormData(prev => ({
-      ...prev,
-      rental_type: option.type,
-      rental_duration: option.duration,
-    }));
+    setFormData((prev) => {
+      const pickup =
+        prev.pickup.trim() === '' ? formatDatetimeLocalCostaRica(new Date()) : prev.pickup;
+      return {
+        ...prev,
+        rental_type: option.type,
+        rental_duration: option.duration,
+        pickup,
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -123,7 +123,7 @@ function RootLayout() {
   const formFooter = FORM_PAGE_FOOTER_STRINGS[lang];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950">
       <nav className="sticky top-0 z-40 shrink-0 bg-white shadow-md border-b-2 border-blue-100 dark:bg-slate-900 dark:border-slate-700 dark:shadow-slate-950/50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex flex-row items-start gap-3 sm:items-center sm:justify-between sm:gap-4">
@@ -157,7 +157,13 @@ function RootLayout() {
         </div>
       </nav>
 
-      <main className={isAdminRoute ? 'py-1 sm:py-2' : 'py-8'}>
+      <main
+        className={
+          isAdminRoute
+            ? 'flex-1 flex flex-col min-h-0 m-0 w-full p-0 flow-root'
+            : 'flex-1 py-8'
+        }
+      >
         <Outlet />
       </main>
 

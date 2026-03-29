@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import type {
   EquipmentKind,
   SurfboardInventoryRow,
@@ -32,6 +32,18 @@ function rowMatchesInventoryFilter(row: SurfboardInventoryRow, filter: Inventory
 
 function rowIsBoogie(row: SurfboardInventoryRow): boolean {
   return (row.equipment_kind ?? 'surfboard') === 'boogie';
+}
+
+function rowMatchesBrandOrNumberSearch(row: SurfboardInventoryRow, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const brand = (row.brand ?? '').trim().toLowerCase();
+  const numRaw = (row.board_number ?? '').trim().toLowerCase();
+  const numNoHash = numRaw.replace(/^#+/, '');
+  const qNoHash = q.replace(/^#+/, '');
+  if (brand.includes(q)) return true;
+  if (numRaw.includes(q) || numNoHash.includes(qNoHash)) return true;
+  return false;
 }
 
 function statusBadgeClass(status: string): string {
@@ -73,6 +85,8 @@ export default function SurfboardInventoryPage() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   /** Formulario de alta: colapsado por defecto para dar espacio a la tabla. */
   const [addPanelOpen, setAddPanelOpen] = useState(false);
+  /** Filtro por texto en marca o número de tabla (tras filtros de estado / boogie). */
+  const [brandOrNumberSearch, setBrandOrNumberSearch] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -112,14 +126,17 @@ export default function SurfboardInventoryPage() {
     return { disponible, rentada, mantenimiento, otras, total: rows.length, boogies };
   }, [rows]);
 
-  const rowsMatchingStatusOnly = useMemo(
-    () => rows.filter((r) => rowMatchesInventoryFilter(r, statusFilter)),
-    [rows, statusFilter]
+  const rowsMatchingStatusAndBoogie = useMemo(
+    () =>
+      rows
+        .filter((r) => rowMatchesInventoryFilter(r, statusFilter))
+        .filter((r) => !boogieOnlyFilter || rowIsBoogie(r)),
+    [rows, statusFilter, boogieOnlyFilter]
   );
 
   const filteredRows = useMemo(
-    () => rowsMatchingStatusOnly.filter((r) => !boogieOnlyFilter || rowIsBoogie(r)),
-    [rowsMatchingStatusOnly, boogieOnlyFilter]
+    () => rowsMatchingStatusAndBoogie.filter((r) => rowMatchesBrandOrNumberSearch(r, brandOrNumberSearch)),
+    [rowsMatchingStatusAndBoogie, brandOrNumberSearch]
   );
 
   useEffect(() => {
@@ -425,6 +442,30 @@ export default function SurfboardInventoryPage() {
           ) : null}
         </div>
 
+        <div className="mb-5 max-w-xl">
+          <label className="form-label mb-1.5 block" htmlFor="inv-search-brand-number">
+            Buscar por marca o n.º de tabla
+          </label>
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500 pointer-events-none"
+              aria-hidden
+            />
+            <input
+              id="inv-search-brand-number"
+              type="search"
+              value={brandOrNumberSearch}
+              onChange={(e) => setBrandOrNumberSearch(e.target.value)}
+              placeholder="Ej. Firewire, 12, #12…"
+              className="form-input pl-9 w-full"
+              autoComplete="off"
+            />
+          </div>
+          <p className="text-xs text-gray-500 dark:text-slate-500 mt-1.5">
+            Se aplica sobre el listado ya filtrado por estado y boogie (si los usas).
+          </p>
+        </div>
+
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
             {error}
@@ -539,19 +580,34 @@ export default function SurfboardInventoryPage() {
                       (<strong className="text-gray-800 dark:text-slate-200">{statusCounts.boogies}</strong> boogies)
                     </>
                   ) : null}
+                  {brandOrNumberSearch.trim() ? (
+                    <>
+                      {' · '}
+                      En pantalla:{' '}
+                      <strong className="text-gray-800 dark:text-slate-200">{filteredRows.length}</strong> con la
+                      búsqueda actual
+                    </>
+                  ) : null}
                 </>
               ) : boogieOnlyFilter ? (
                 <>
                   Solo boogies:{' '}
                   <strong className="text-gray-800 dark:text-slate-200">{filteredRows.length}</strong> de{' '}
-                  <strong className="text-gray-800 dark:text-slate-200">{rowsMatchingStatusOnly.length}</strong>
+                  <strong className="text-gray-800 dark:text-slate-200">{rowsMatchingStatusAndBoogie.length}</strong>
                   {statusFilter === 'all' ? ' equipos en inventario' : ' con este estado'}
+                  {brandOrNumberSearch.trim()
+                    ? ` (búsqueda «${brandOrNumberSearch.trim()}»)`
+                    : ''}
                 </>
               ) : (
                 <>
                   Mostrando <strong className="text-gray-800 dark:text-slate-200">{filteredRows.length}</strong> de{' '}
-                  <strong className="text-gray-800 dark:text-slate-200">{rowsMatchingStatusOnly.length}</strong> equipos
+                  <strong className="text-gray-800 dark:text-slate-200">{rowsMatchingStatusAndBoogie.length}</strong>{' '}
+                  equipos
                   {statusFilter !== 'all' ? ' con este estado' : ''}
+                  {brandOrNumberSearch.trim()
+                    ? ` (búsqueda «${brandOrNumberSearch.trim()}»)`
+                    : ''}
                 </>
               )}
             </p>
@@ -583,8 +639,9 @@ export default function SurfboardInventoryPage() {
                 ) : filteredRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-slate-500">
-                      Ningún equipo coincide con este filtro. Pulsa «Todas» o el mismo contador otra vez para ver
-                      todo el inventario.
+                      {brandOrNumberSearch.trim()
+                        ? 'Ningún equipo coincide con la búsqueda por marca o número. Prueba otro texto o borra el campo de búsqueda.'
+                        : 'Ningún equipo coincide con este filtro. Pulsa «Todas» o el mismo contador otra vez para ver todo el inventario.'}
                     </td>
                   </tr>
                 ) : (

@@ -3,7 +3,7 @@ import { Plus, Trash2, ArrowLeftRight, DoorOpen, Banknote } from 'lucide-react';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import StoreLineQuantityStepper from './StoreLineQuantityStepper';
-import { getRentalPriceForSelection } from '../config/rentalOptions';
+import { getRentalPriceForSelection, isOpenEndedRental } from '../config/rentalOptions';
 import {
   checkoutCloseRentalAgreement,
   swapRentalSurfboard,
@@ -185,6 +185,7 @@ export default function RentalAgreementEditModal({
   >(0);
 
   const isClosed = agreement.status === 'cerrado';
+  const isOpenEndedAgreement = isOpenEndedRental(agreement.rental_type, agreement.rental_duration);
 
   useEffect(() => {
     setPickup(isoToDatetimeLocalValue(agreement.pickup));
@@ -590,6 +591,12 @@ export default function RentalAgreementEditModal({
                 onChange={(e) => setReturnTime(e.target.value)}
                 className="form-input [color-scheme:light] dark:[color-scheme:dark]"
               />
+              {isOpenEndedAgreement ? (
+                <p className="mt-1.5 text-xs text-gray-600 dark:text-slate-500">
+                  Renta abierta: el cliente no indicó fecha en el formulario público. Puedes fijarla aquí cuando
+                  corresponda.
+                </p>
+              ) : null}
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import type { StoreProductRow } from '../../types/storeProduct';
 import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import {
@@ -47,6 +47,7 @@ export default function StoreArticlesCatalogPage() {
   const [editPrice, setEditPrice] = useState('');
   const [editStock, setEditStock] = useState('');
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [addPanelOpen, setAddPanelOpen] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -95,6 +96,7 @@ export default function StoreArticlesCatalogPage() {
       setNewPrice('');
       setNewStock('');
       await load();
+      setAddPanelOpen(false);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -183,65 +185,91 @@ export default function StoreArticlesCatalogPage() {
           </div>
         </div>
 
-        <form
-          onSubmit={handleAdd}
-          className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8 mt-8"
-        >
-          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nuevo artículo</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="form-label" htmlFor="store-art-name">
-                Nombre *
-              </label>
-              <input
-                id="store-art-name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="form-input"
-                placeholder="Ej. Crema solar, parche de quilla…"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="store-art-price">
-                Precio (USD) *
-              </label>
-              <input
-                id="store-art-price"
-                type="text"
-                inputMode="decimal"
-                value={newPrice}
-                onChange={(e) => setNewPrice(e.target.value)}
-                className="form-input"
-                placeholder="0.00"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="store-art-stock">
-                Cantidad disponible *
-              </label>
-              <input
-                id="store-art-stock"
-                type="text"
-                inputMode="numeric"
-                value={newStock}
-                onChange={(e) => setNewStock(e.target.value)}
-                className="form-input"
-                placeholder="0"
-                autoComplete="off"
-              />
-            </div>
-          </div>
+        <div className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg mb-8 mt-8 overflow-hidden">
           <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50"
+            type="button"
+            id="store-add-panel-toggle"
+            onClick={() => setAddPanelOpen((v) => !v)}
+            aria-expanded={addPanelOpen}
+            aria-controls="store-add-panel"
+            className="w-full flex items-center justify-between gap-3 px-4 py-4 sm:px-6 text-left transition hover:bg-gray-50/90 dark:hover:bg-slate-800/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:focus-visible:ring-emerald-400"
           >
-            <Plus className="w-5 h-5" />
-            Añadir al catálogo
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100">Nuevo artículo</h2>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1 leading-snug">
+                {addPanelOpen
+                  ? 'Ocultar formulario de alta'
+                  : 'Expandir para añadir productos al catálogo de tienda'}
+              </p>
+            </div>
+            <ChevronDown
+              className={`w-6 h-6 shrink-0 text-gray-500 dark:text-slate-400 transition-transform duration-200 ${
+                addPanelOpen ? 'rotate-180' : ''
+              }`}
+              aria-hidden
+            />
           </button>
-        </form>
+
+          {addPanelOpen ? (
+            <div id="store-add-panel" className="px-4 pb-6 sm:px-6 border-t border-gray-200 dark:border-slate-600">
+              <form onSubmit={handleAdd} className="pt-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="form-label" htmlFor="store-art-name">
+                      Nombre *
+                    </label>
+                    <input
+                      id="store-art-name"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="form-input"
+                      placeholder="Ej. Crema solar, parche de quilla…"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="store-art-price">
+                      Precio (USD) *
+                    </label>
+                    <input
+                      id="store-art-price"
+                      type="text"
+                      inputMode="decimal"
+                      value={newPrice}
+                      onChange={(e) => setNewPrice(e.target.value)}
+                      className="form-input"
+                      placeholder="0.00"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="store-art-stock">
+                      Cantidad disponible *
+                    </label>
+                    <input
+                      id="store-art-stock"
+                      type="text"
+                      inputMode="numeric"
+                      value={newStock}
+                      onChange={(e) => setNewStock(e.target.value)}
+                      className="form-input"
+                      placeholder="0"
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50"
+                >
+                  <Plus className="w-5 h-5" />
+                  Añadir al catálogo
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </div>
 
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">

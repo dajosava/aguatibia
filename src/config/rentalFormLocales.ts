@@ -54,6 +54,8 @@ export type RentalFormStrings = {
   addressPlaceholder: string;
   pickup: string;
   returnLabel: string;
+  /** Texto bajo el campo de retorno cuando la opción es renta abierta (campo deshabilitado). */
+  returnOpenEndedHint: string;
   boardsSection: string;
   addBoard: string;
   loadingBoards: string;
@@ -123,6 +125,7 @@ const rentalOptionLabelsEn: Record<string, string> = {
   premium_extra_day: 'Premium Surfboard Extra Day',
   regular_week: 'Regular Surfboard Week',
   premium_week: 'Premium Surfboard Week',
+  open_ended: 'Open-Ended Rental',
 };
 
 const rentalOptionLabelsEs: Record<string, string> = {
@@ -275,6 +278,8 @@ export const RENTAL_FORM_STRINGS: Record<RentalFormLang, RentalFormStrings> = {
     addressPlaceholder: 'Tu dirección',
     pickup: 'Retiro',
     returnLabel: 'Devolución',
+    returnOpenEndedHint:
+      'La renta abierta no lleva fecha de retorno en este formulario. El equipo la registrará desde el panel administrativo cuando corresponda.',
     boardsSection: 'Tablas de surf *',
     addBoard: 'Añadir tabla extra',
     loadingBoards: 'Cargando inventario de tablas…',

@@ -6,7 +6,12 @@ import SignatureCanvas from './SignatureCanvas';
 import SurfboardCombobox from './SurfboardCombobox';
 import StoreProductLineInput, { type StoreItemLine } from './StoreProductLineInput';
 import StoreLineQuantityStepper from './StoreLineQuantityStepper';
-import { RENTAL_OPTIONS, getRentalDurationMs, getRentalPriceForSelection } from '../config/rentalOptions';
+import {
+  RENTAL_OPTIONS,
+  getRentalDurationMs,
+  getRentalPriceForSelection,
+  isOpenEndedRental,
+} from '../config/rentalOptions';
 import type { RentalFormValidationMessages } from '../config/rentalFormLocales';
 import { RENTAL_FORM_STRINGS } from '../config/rentalFormLocales';
 import { usePublicFormLang } from '../contexts/PublicFormLangContext';
@@ -158,8 +163,12 @@ export default function RentalForm() {
       });
   }, []);
 
-  /** Devolución = retiro + duración de la opción (3 h / 24 h / 1 semana), hora Costa Rica. */
+  /** Devolución = retiro + duración de la opción (3 h / 24 h / 1 semana), hora Costa Rica. Renta abierta: sin fecha aquí. */
   useEffect(() => {
+    if (isOpenEndedRental(formData.rental_type, formData.rental_duration)) {
+      setFormData((prev) => (prev.return_time === '' ? prev : { ...prev, return_time: '' }));
+      return;
+    }
     const dur = formData.rental_duration;
     const p = formData.pickup.trim();
     if (!dur || !p) return;
@@ -170,7 +179,7 @@ export default function RentalForm() {
     const nextReturn = formatDatetimeLocalCostaRica(new Date(ms + delta));
     if (!nextReturn) return;
     setFormData((prev) => (prev.return_time === nextReturn ? prev : { ...prev, return_time: nextReturn }));
-  }, [formData.pickup, formData.rental_duration]);
+  }, [formData.pickup, formData.rental_duration, formData.rental_type]);
 
   useEffect(() => {
     let cancelled = false;
@@ -192,6 +201,7 @@ export default function RentalForm() {
 
   useEffect(() => {
     if (!isSuccess) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     const timer = window.setTimeout(() => setIsSuccess(false), 5000);
     return () => window.clearTimeout(timer);
   }, [isSuccess]);
@@ -217,6 +227,11 @@ export default function RentalForm() {
       })
     );
   }, [formData.rental_type, surfboards]);
+
+  const isOpenEndedSelection = useMemo(
+    () => isOpenEndedRental(formData.rental_type, formData.rental_duration),
+    [formData.rental_type, formData.rental_duration]
+  );
 
   const selectedRentalOptionLabel = useMemo(() => {
     const opt = RENTAL_OPTIONS.find(
@@ -284,11 +299,13 @@ export default function RentalForm() {
     setFormData((prev) => {
       const pickup =
         prev.pickup.trim() === '' ? formatDatetimeLocalCostaRica(new Date()) : prev.pickup;
+      const openEnded = isOpenEndedRental(option.type, option.duration);
       return {
         ...prev,
         rental_type: option.type,
         rental_duration: option.duration,
         pickup,
+        return_time: openEnded ? '' : prev.return_time,
       };
     });
   };
@@ -551,34 +568,6 @@ export default function RentalForm() {
                 placeholder={t.addressPlaceholder}
               />
             </div>
-
-            <div>
-              <label className="form-label" htmlFor="rental-pickup">
-                {t.pickup}
-              </label>
-              <input
-                id="rental-pickup"
-                type="datetime-local"
-                name="pickup"
-                value={formData.pickup}
-                onChange={handleInputChange}
-                className="form-input [color-scheme:light] dark:[color-scheme:dark]"
-              />
-            </div>
-
-            <div>
-              <label className="form-label" htmlFor="rental-return">
-                {t.returnLabel}
-              </label>
-              <input
-                id="rental-return"
-                type="datetime-local"
-                name="return_time"
-                value={formData.return_time}
-                onChange={handleInputChange}
-                className="form-input [color-scheme:light] dark:[color-scheme:dark]"
-              />
-            </div>
           </div>
 
           <div>
@@ -603,6 +592,42 @@ export default function RentalForm() {
                   </span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div>
+              <label className="form-label" htmlFor="rental-pickup">
+                {t.pickup}
+              </label>
+              <input
+                id="rental-pickup"
+                type="datetime-local"
+                name="pickup"
+                value={formData.pickup}
+                onChange={handleInputChange}
+                className="form-input [color-scheme:light] dark:[color-scheme:dark]"
+              />
+            </div>
+
+            <div>
+              <label className="form-label" htmlFor="rental-return">
+                {t.returnLabel}
+              </label>
+              <input
+                id="rental-return"
+                type="datetime-local"
+                name="return_time"
+                value={formData.return_time}
+                onChange={handleInputChange}
+                disabled={isOpenEndedSelection}
+                aria-disabled={isOpenEndedSelection}
+                title={isOpenEndedSelection ? t.returnOpenEndedHint : undefined}
+                className="form-input [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+              {isOpenEndedSelection ? (
+                <p className="mt-1.5 text-xs text-gray-600 dark:text-slate-400">{t.returnOpenEndedHint}</p>
+              ) : null}
             </div>
           </div>
 

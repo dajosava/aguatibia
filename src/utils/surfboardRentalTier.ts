@@ -34,6 +34,9 @@ export function surfboardMatchesRentalTier(row: SurfboardInventoryRow, rentalTyp
     return false;
   }
   const tier = row.board_tier ?? 'regular';
+  if (rentalType === 'open_ended') {
+    return tier === 'regular';
+  }
   if (rentalTypeRequiresPremiumBoards(rentalType)) return tier === 'premium';
   return tier === 'regular';
 }

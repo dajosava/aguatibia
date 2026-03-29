@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Pencil, Plus, Trash2, Armchair } from 'lucide-react';
+import { Armchair, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { RentalArticleInventoryRow } from '../../types/rentalArticleInventory';
 import { useAdminAutoRefresh } from '../../hooks/useAdminAutoRefresh';
 import {
@@ -29,6 +29,7 @@ export default function RentalArticlesInventoryPage() {
   const [editUnitPrice, setEditUnitPrice] = useState('0');
   const [editStock, setEditStock] = useState('1');
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [addPanelOpen, setAddPanelOpen] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -99,6 +100,7 @@ export default function RentalArticlesInventoryPage() {
       setNewUnitPrice('0');
       setNewStock('1');
       await load();
+      setAddPanelOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar');
     } finally {
@@ -195,90 +197,116 @@ export default function RentalArticlesInventoryPage() {
           </div>
         </div>
 
-        <form
-          onSubmit={handleAdd}
-          className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8 mt-8"
-        >
-          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nuevo artículo</h2>
-          <div className="grid sm:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="form-label" htmlFor="art-name">
-                Nombre *
-              </label>
-              <input
-                id="art-name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="form-input"
-                placeholder="Ej. Sombrilla grande 2 m"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="art-category">
-                Categoría
-              </label>
-              <input
-                id="art-category"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="form-input"
-                placeholder={CATEGORY_PLACEHOLDER}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="art-price">
-                Precio de renta (USD) *
-              </label>
-              <input
-                id="art-price"
-                type="text"
-                inputMode="decimal"
-                value={newUnitPrice}
-                onChange={(e) => setNewUnitPrice(e.target.value)}
-                className="form-input"
-                placeholder="0.00"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="art-stock">
-                Unidades en stock *
-              </label>
-              <input
-                id="art-stock"
-                type="number"
-                min={0}
-                step={1}
-                value={newStock}
-                onChange={(e) => setNewStock(e.target.value)}
-                className="form-input"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="form-label" htmlFor="art-desc">
-                Descripción / notas (solo interno)
-              </label>
-              <textarea
-                id="art-desc"
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                className="form-input min-h-[88px]"
-                placeholder="Modelo, color, ubicación en bodega…"
-                rows={3}
-              />
-            </div>
-          </div>
+        <div className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg mb-8 mt-8 overflow-hidden">
           <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 disabled:opacity-50"
+            type="button"
+            id="rental-art-add-panel-toggle"
+            onClick={() => setAddPanelOpen((v) => !v)}
+            aria-expanded={addPanelOpen}
+            aria-controls="rental-art-add-panel"
+            className="w-full flex items-center justify-between gap-3 px-4 py-4 sm:px-6 text-left transition hover:bg-gray-50/90 dark:hover:bg-slate-800/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-inset dark:focus-visible:ring-amber-400"
           >
-            <Plus className="w-5 h-5" />
-            Añadir artículo
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100">Nuevo artículo</h2>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1 leading-snug">
+                {addPanelOpen
+                  ? 'Ocultar formulario de alta'
+                  : 'Expandir para registrar sombrillas, sillas, toldos u otros artículos de renta'}
+              </p>
+            </div>
+            <ChevronDown
+              className={`w-6 h-6 shrink-0 text-gray-500 dark:text-slate-400 transition-transform duration-200 ${
+                addPanelOpen ? 'rotate-180' : ''
+              }`}
+              aria-hidden
+            />
           </button>
-        </form>
+
+          {addPanelOpen ? (
+            <div id="rental-art-add-panel" className="px-4 pb-6 sm:px-6 border-t border-gray-200 dark:border-slate-600">
+              <form onSubmit={handleAdd} className="pt-4">
+                <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="form-label" htmlFor="art-name">
+                      Nombre *
+                    </label>
+                    <input
+                      id="art-name"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="form-input"
+                      placeholder="Ej. Sombrilla grande 2 m"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="art-category">
+                      Categoría
+                    </label>
+                    <input
+                      id="art-category"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      className="form-input"
+                      placeholder={CATEGORY_PLACEHOLDER}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="art-price">
+                      Precio de renta (USD) *
+                    </label>
+                    <input
+                      id="art-price"
+                      type="text"
+                      inputMode="decimal"
+                      value={newUnitPrice}
+                      onChange={(e) => setNewUnitPrice(e.target.value)}
+                      className="form-input"
+                      placeholder="0.00"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="art-stock">
+                      Unidades en stock *
+                    </label>
+                    <input
+                      id="art-stock"
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={newStock}
+                      onChange={(e) => setNewStock(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="form-label" htmlFor="art-desc">
+                      Descripción / notas (solo interno)
+                    </label>
+                    <textarea
+                      id="art-desc"
+                      value={newDesc}
+                      onChange={(e) => setNewDesc(e.target.value)}
+                      className="form-input min-h-[88px]"
+                      placeholder="Modelo, color, ubicación en bodega…"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 disabled:opacity-50"
+                >
+                  <Plus className="w-5 h-5" />
+                  Añadir artículo
+                </button>
+              </form>
+            </div>
+          ) : null}
+        </div>
 
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">

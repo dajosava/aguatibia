@@ -16,7 +16,14 @@ export const RENTAL_OPTIONS: RentalOption[] = [
   { id: 'premium_extra_day', label: 'Premium Surfboard Extra Day', price: 25, type: 'premium', duration: 'extra_day' },
   { id: 'regular_week', label: 'Regular Surfboard Week', price: 145, type: 'regular', duration: 'week' },
   { id: 'premium_week', label: 'Premium Surfboard Week', price: 180, type: 'premium', duration: 'week' },
+  /** Sin fecha de retorno en el formulario público; el personal la define en el panel admin. Tablas tier regular (surf). */
+  { id: 'open_ended', label: 'Open-Ended Rental', price: 25, type: 'open_ended', duration: 'open_ended' },
 ];
+
+/** Renta abierta: sin devolución programada en el formulario público. */
+export function isOpenEndedRental(rentalType: string, rentalDuration: string): boolean {
+  return rentalType === 'open_ended' && rentalDuration === 'open_ended';
+}
 
 export function getRentalPriceForSelection(rentalType: string, rentalDuration: string): number {
   const selected = RENTAL_OPTIONS.find(
@@ -34,6 +41,8 @@ const MS_DAY = 24 * MS_HOUR;
  */
 export function getRentalDurationMs(duration: string): number {
   switch (duration) {
+    case 'open_ended':
+      return 0;
     case 'sesh':
       return 3 * MS_HOUR;
     case 'full_day':

@@ -1,4 +1,5 @@
 import type { RentalAgreementWithStoreItems } from '../types/rentalAgreement';
+import { isOpenEndedRental } from '../config/rentalOptions';
 import { getAdminStatusBadge, parseDateTimeMs } from './rentalDisplayStatus';
 
 function formatDateTimeEs(value: string | null | undefined): string {
@@ -129,7 +130,7 @@ function buildDocumentHtml(
   <h2>Renta</h2>
   <div class="grid">
     <div class="row"><span class="label">Retiro (pickup)</span><span>${escapeHtml(agreement.pickup?.trim() || 'No especificado')}</span></div>
-    <div class="row"><span class="label">Devolución</span><span>${escapeHtml(agreement.return_time?.trim() || 'No especificado')}</span></div>
+    <div class="row"><span class="label">Devolución</span><span>${escapeHtml(formatReturnForPrint(agreement))}</span></div>
     <div class="row" style="grid-column:1/-1"><span class="label">Tablas</span>${boardsBlock}</div>
     ${checkedByRow}
     <div class="row"><span class="label">Tipo de renta</span><span>${escapeHtml(agreement.rental_type.replace(/_/g, ' '))}</span></div>

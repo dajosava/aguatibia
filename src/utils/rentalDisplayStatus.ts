@@ -1,4 +1,5 @@
 import type { RentalAgreementRow } from '../types/rentalAgreement';
+import { isOpenEndedRental } from '../config/rentalOptions';
 
 /** Parsea pickup/return guardados como datetime-local (ISO sin Z). */
 export function parseDateTimeMs(value: string | null): number | null {
@@ -25,10 +26,17 @@ export function isPendingPickup(agreement: Pick<RentalAgreementRow, 'status' | '
  * Renta vigente: ya comenzó el periodo (pickup ya pasó o hoy) y la fecha de retorno no ha pasado.
  */
 export function isRentalOngoing(
-  agreement: Pick<RentalAgreementRow, 'status' | 'pickup' | 'return_time'>
+  agreement: Pick<RentalAgreementRow, 'status' | 'pickup' | 'return_time' | 'rental_type' | 'rental_duration'>
 ): boolean {
   if (agreement.status === 'cancelled' || agreement.status === 'cerrado') return false;
   if (isPendingPickup(agreement)) return false;
+
+  if (
+    isOpenEndedRental(agreement.rental_type, agreement.rental_duration) &&
+    parseDateTimeMs(agreement.return_time) === null
+  ) {
+    return true;
+  }
 
   const ret = parseDateTimeMs(agreement.return_time);
   if (ret === null) return false;

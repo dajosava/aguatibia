@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import type {
   EquipmentKind,
   SurfboardInventoryRow,
@@ -71,6 +71,8 @@ export default function SurfboardInventoryPage() {
   /** Si es true, la tabla solo muestra filas catalogadas como boogie (combinable con filtro por estado). */
   const [boogieOnlyFilter, setBoogieOnlyFilter] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  /** Formulario de alta: colapsado por defecto para dar espacio a la tabla. */
+  const [addPanelOpen, setAddPanelOpen] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -176,6 +178,7 @@ export default function SurfboardInventoryPage() {
       setNewEquipmentKind('surfboard');
       setNewTier('regular');
       await load();
+      setAddPanelOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar');
     } finally {
@@ -270,11 +273,36 @@ export default function SurfboardInventoryPage() {
           filtra el formulario público; «Boogie Session» solo lista boogies. La descripción es solo interna.
         </p>
 
-        <form
-          onSubmit={handleAdd}
-          className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg p-6 mb-8"
-        >
-          <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100 mb-4">Nuevo equipo</h2>
+        <div className="bg-white dark:bg-slate-900/95 dark:border dark:border-slate-700 rounded-xl shadow-lg mb-8 overflow-hidden">
+          <button
+            type="button"
+            id="inv-add-panel-toggle"
+            onClick={() => setAddPanelOpen((v) => !v)}
+            aria-expanded={addPanelOpen}
+            aria-controls="inv-add-panel"
+            className="w-full flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-4 text-left transition hover:bg-gray-50/90 dark:hover:bg-slate-800/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset dark:focus-visible:ring-cyan-500"
+          >
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold tracking-tight text-gray-800 dark:text-slate-100">
+                Nuevo equipo
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1 leading-snug">
+                {addPanelOpen
+                  ? 'Ocultar formulario de alta'
+                  : 'Expandir para añadir tablas o boogies al inventario'}
+              </p>
+            </div>
+            <ChevronDown
+              className={`w-6 h-6 shrink-0 text-gray-500 dark:text-slate-400 transition-transform duration-200 ${
+                addPanelOpen ? 'rotate-180' : ''
+              }`}
+              aria-hidden
+            />
+          </button>
+
+          {addPanelOpen ? (
+          <div id="inv-add-panel" className="px-4 pb-6 sm:px-6 border-t border-gray-200 dark:border-slate-600">
+        <form onSubmit={handleAdd} className="pt-4">
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div className="sm:col-span-2">
               <label className="form-label" htmlFor="inv-equipment-kind">
@@ -393,6 +421,9 @@ export default function SurfboardInventoryPage() {
             Añadir equipo
           </button>
         </form>
+          </div>
+          ) : null}
+        </div>
 
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">

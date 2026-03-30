@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Armchair, BarChart3, LayoutDashboard, LogOut, ShoppingBag, User, Waves } from 'lucide-react';
 import {
@@ -29,6 +29,36 @@ const nav: {
 
 export default function AdminLayout({ children }: Props) {
   const { signOut, user } = useAuth();
+  const [stickySidebar, setStickySidebar] = useState<{ top: number; maxHeight: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const nav = document.getElementById('app-site-header');
+    if (!nav) return;
+
+    const mq = window.matchMedia('(min-width: 768px)');
+
+    const sync = () => {
+      if (!mq.matches) {
+        setStickySidebar(null);
+        return;
+      }
+      const h = nav.getBoundingClientRect().height;
+      const top = Math.round(h);
+      const maxHeight = Math.max(240, Math.round(window.innerHeight - top));
+      setStickySidebar({ top, maxHeight });
+    };
+
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(nav);
+    window.addEventListener('resize', sync);
+    mq.addEventListener('change', sync);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', sync);
+      mq.removeEventListener('change', sync);
+    };
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -43,10 +73,18 @@ export default function AdminLayout({ children }: Props) {
   const sessionTooltip = [fullName, email].filter(Boolean).join(' · ') || undefined;
   const sessionDisplay = fullName || email || '—';
 
+  const asideStickyStyle: CSSProperties | undefined = stickySidebar
+    ? {
+        top: stickySidebar.top,
+        maxHeight: stickySidebar.maxHeight,
+      }
+    : undefined;
+
   return (
-    <div className="flex flex-col md:flex-row flex-1 min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-6rem)] bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+    <div className="flex flex-col md:flex-row flex-1 min-h-0 w-full m-0 p-0 bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       <aside
-        className="shrink-0 w-full md:w-56 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 md:min-h-0 flex flex-col md:sticky md:top-36 lg:top-44 md:z-30 md:self-start md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-12rem)] md:overflow-y-auto md:overscroll-y-contain"
+        className="shrink-0 w-full m-0 mt-0 pt-0 md:w-56 border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 md:min-h-0 flex flex-col md:sticky md:z-30 md:self-start md:overflow-y-auto md:overscroll-y-contain"
+        style={asideStickyStyle}
       >
         <div className="p-4 border-b border-gray-200 dark:border-slate-700 shrink-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Panel</p>
